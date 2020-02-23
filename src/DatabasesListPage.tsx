@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Component, Fragment } from "react";
+import { Component, Fragment, useState } from "react";
 import { ISchema, ITable, IDatabase, IColumn, DatabaseType, GraphqlType } from "../../voodoo-shared/ISchema";
 import { gql, useQuery } from '@apollo/client';
+import * as _ from "lodash";
 
 import {
     Form,
@@ -63,9 +64,12 @@ export function DatabasesListPage() {
     }
 `;
     const { loading, error, data } = useQuery<{ databases: IDatabase[] }>(query);
+    const [editedDb, setEditedDb] = useState<IDatabase>();
 
     if (loading) return <div>'Loading...'</div>;
     if (error) return <div>`Error! ${error.message}`</div>;
+
+
 
     return (
 
@@ -90,6 +94,7 @@ export function DatabasesListPage() {
             </Row>
             <Table
                 dataSource={data?.databases}
+                rowKey="prefix"
                 size="small"
                 bordered
                 pagination={false}
@@ -98,19 +103,25 @@ export function DatabasesListPage() {
                         <Button
                             style={{ float: "right" }}
                             size="small"
-                        //onClick={this.openNewTableModal.bind(this)}
+                            onClick={() => setEditedDb({} as any)
+                            }
 
                         >
                             + добавить базу даных
                         </Button>
                     </div>}
             >
-                <Column title="api-префикс" dataIndex="prefix" key="prefix" />
-                <Column title="api-имя" dataIndex="name" key="name" />
-                {/* <Column title="описание" dataIndex="description" key="description" /> */}
-                <Column title="тип БД" dataIndex={"type"} key="package.name" />
-                <Column title="сервер БД (URL)" dataIndex={["connection", "host"]} key="connection.host" />
-                <Column title="имя БД" dataIndex={["connection", "database"]} key="connection.database" />
+                <Column title="api-имя" dataIndex="name" key="name" className="database-text-color" />
+                <Column title="api-префикс" dataIndex="prefix" key="prefix" className="database-text-color" />
+                <Column title="описание" dataIndex="description" key="description" className="database-text-color" /> }
+                <Column title="тип сервера" dataIndex="type" key="package.name" />
+                <Column
+                    title="адрес сервера (URL)"
+                    key="connection.host"
+                    render={(text, record: IDatabase, index) => <span>{record.connection.host}:{record.connection.port}</span>}
+                />
+                <Column title="имя базы данных" dataIndex={["connection", "database"]} key="connection.database" />
+                <Column title="логин" dataIndex={["connection", "username"]} key="connection.username" />
                 <Column title={<span style={{ float: "right" }}>действия</span>} key="operation"
                     render={(text, record: IDatabase, index) => {
                         return (
@@ -126,6 +137,7 @@ export function DatabasesListPage() {
                                 </Popconfirm>
                                 <Button size="small" type="link" style={{ float: "right" }}
                                     onClick={() => {
+                                        setEditedDb(_.cloneDeep(record))
                                         //Router.push("/admin/table?tableId=" + record.id)
                                         //var win = window.open("/admin/table?tableId=" + record.id, '_blank', "left=50, top=50, width=1200,height=800");
                                         //win.focus();
@@ -139,8 +151,60 @@ export function DatabasesListPage() {
                         )
                     }}
                 />
-
             </Table>
+            {!editedDb ? null : (
+                <Modal
+                    visible={true}
+                    title="Создание новой таблицы"
+                    footer={[
+                        <Button key="back" onClick={() => {
+                            setEditedDb(undefined);
+                        }}>
+                            Отмена
+                    </Button>,
+                        <Button key="submit" type="primary" onClick={async () => {
+                            // if (!(await isFormValidated(this.newTableForm)))
+                            //     return;
+
+                            // let query: string[] = [];
+                            // query.push(await dbEmitInsUpdDelRowsMutations("schema_table", [], [this.newTable]));
+                            // query.push(await dbEmitInsUpdDelRowsMutations("schema_tablecol", [], this.newTable.columns));
+                            // await dbExecuteMutation(query.join("\n"));
+                            // message.success(`Таблица "${this.newTable.name}" создана`);
+                            // await dbExecuteMutation(`admin_synchronyze_schema_to_pg (tableId:"${this.newTable.id}")`);
+                            // message.success(`Таблица "${this.newTable.name}" синхронизирована с базой данных`);
+
+                            // this.newTableModalVisible = false;
+                            // Router.push("/admin/table?tableId=" + this.newTable.id)
+                        }} >
+                            Создать базу данных
+                    </Button>,
+                    ]}
+                >
+                    <Form
+                        labelCol={{ span: 7 }}
+                        wrapperCol={{ span: 15 }}
+                        layout="horizontal"
+                        initialValues={editedDb}
+                        size="small"
+                        onValuesChange={(changedFields, allFields) => {
+                            //_.assign(this.newTable, changedFields);
+                            //this.forceUpdate();
+                        }}
+                    >
+                        <Form.Item name="prefix" label="prefix">
+                            <Input style={{ maxWidth: 150 }} disabled />
+                        </Form.Item>
+
+                        <Form.Item name="name" label="имя базы"
+                        //    rules={getSchemaTableNameRules()}
+                        >
+                            <Input style={{ maxWidth: 500 }} />
+                        </Form.Item>
+
+                    </Form>
+                </Modal>)
+            }
         </div>
     );
 

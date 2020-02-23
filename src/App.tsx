@@ -23,7 +23,7 @@ const { Header, Content, Footer, Sider } = Layout;
 const client = new ApolloClient({
   cache: new InMemoryCache(),
   link: new HttpLink({
-    uri: 'http://localhost:4001',
+    uri: `${window.location.protocol}//${window.location.hostname}:${Number.parseInt(window.location.port) + 1}`,
   })
 });
 
@@ -120,7 +120,7 @@ export default class App extends Component<any> {
 
               </div>
             </Layout.Content>
-            <Layout.Footer style={{ textAlign: 'center' }}> Designed by Buhta ООО, ©2020 </Layout.Footer>
+            {/* <Layout.Footer style={{ textAlign: 'center' }}> Designed by Buhta ООО, ©2020 </Layout.Footer> */}
           </Layout>,
       </div>
       </ApolloProvider>
