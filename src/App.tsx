@@ -13,10 +13,12 @@ import {
   Route,
   Link
 } from "react-router-dom";
-import { Example } from "./Example";
+
 
 import { ApolloProvider, ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
 import { DatabasesListPage } from "./DatabasesListPage";
+
+const { Header, Content, Footer, Sider } = Layout;
 
 const client = new ApolloClient({
   cache: new InMemoryCache(),
@@ -31,24 +33,23 @@ export default class App extends Component<any> {
       <ApolloProvider client={client}>
         <div className="App">
           <Layout className="layout">
-            <Layout.Header style={{ padding: 0 }}>
-              {/* <div className="logo" style={
-              {
-                width: 150,
-                height: 31,
-                background: "rgba(255, 255, 255, 0.2)",
-                margin: "16 24 16 0",
-                float: "left",
-              }
-            } >
-              <img src="logo.png" style={{
-                width: 120,
-                marginTop: -5,
-                marginLeft: 6,
-              }}></img>
-            </div> */}
+            <Header style={{ padding: 0 }}>
+              <div className="logo" style={
+                {
+                  width: 150,
+                  //height: 64,
+                  //background: "rgba(255, 255, 255, 0.2)",
+                  margin: "12px 12px 12px 42px",
+                  float: "left",
+                  color: "white",
+                  fontSize: 15,
+                  lineHeight: "initial"
+                }
+              } >
+                Graphgl-Voodoo Admin <span style={{ margin: 5, color: "grey" }} > ver 0.1b</span>
+              </div>
               <Menu
-                // theme="dark"
+                theme="dark"
                 mode="horizontal"
                 //defaultSelectedKeys={['2']}
                 style={{ lineHeight: '64px' }}
@@ -91,14 +92,14 @@ export default class App extends Component<any> {
                 <Menu.Item key="setti6ng:2">Партии товара</Menu.Item>
               </SubMenu> */}
               </Menu>
-            </Layout.Header>
-            <Layout.Content style={{ padding: '0 50px' }}>
+            </Header>
+            <Layout.Content style={{ padding: '0 25px' }}>
               {/* <Breadcrumb style={{ margin: '16px 0' }}>
                                 <Breadcrumb.Item>Home</Breadcrumb.Item>
                                 <Breadcrumb.Item>List</Breadcrumb.Item>
                                 <Breadcrumb.Item>App</Breadcrumb.Item>
                             </Breadcrumb> */}
-              <div className="site-layout-content" style={{ padding: 24 }} >
+              <div className="site-layout-content"  >
                 <Switch>
                   <Route path="/databases">
                     <DatabasesListPage></DatabasesListPage>

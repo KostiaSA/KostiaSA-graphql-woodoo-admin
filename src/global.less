@@ -1,38 +1,53 @@
 @import 'antd/dist/antd.less';
 
+body {
+    background-color: #fafafa;
+}
+
+
+.ant-layout,
+.ant-layout-footer {
+    background: #fafafa;
+}
 
 @text-color: fade(@black, 80%);
 
 .ant-form-item {
-  margin-bottom: 12px;
+    margin-bottom: 12px;
 }
 
 @border-color-base: hsv(0, 0, 75%); // base border outline a component
 @border-color-split: hsv(0, 0, 85%); // split border inside a component
 
 .delete-action {
-  color: @red-3;
+    color: @red-3;
 }
 
 @animation-duration-slow: 0.1s; // Modal
 @modal-mask-bg: fade(@black, 25%);
 
-.ant-btn .fas{
-    font-size: 12px;
-    margin-top: -3px;
-    //color: #0000009c;
-}y
+.ant-menu {
+    font-size: 15px;
+}
 
-.ant-btn.ant-btn-icon-only .fas{
+.ant-btn .fas {
     font-size: 12px;
     margin-top: -3px;
     //color: #0000009c;
 }
-.ant-btn.ant-btn-icon-only .far{
+
+y .ant-btn.ant-btn-icon-only .fas {
     font-size: 12px;
     margin-top: -3px;
     //color: #0000009c;
 }
+
+.ant-btn.ant-btn-icon-only .far {
+    font-size: 12px;
+    margin-top: -3px;
+    //color: #0000009c;
+}
+
 // .ant-btn-icon-only  .fas:hover{
 //   color: #40a9ff;
 // }
@@ -45,7 +60,7 @@
 }
 
 // суббота красным цветом antd DatePicker
-.ant-picker-content th:nth-child(6){
+.ant-picker-content th:nth-child(6) {
     color: red;
 }
 
@@ -58,7 +73,7 @@
 }
 
 // воскр красным цветом antd DatePicker
-.ant-picker-content th:nth-child(7){
+.ant-picker-content th:nth-child(7) {
     color: red;
 }
 
@@ -69,4 +84,3 @@
 .ant-picker-cell:nth-child(7) {
     color: #ff000078;
 }
-

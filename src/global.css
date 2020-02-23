@@ -23600,11 +23600,21 @@ div.ant-typography-edit-content.ant-typography-rtl {
     opacity: 0;
   }
 }
+body {
+  background-color: #fafafa;
+}
+.ant-layout,
+.ant-layout-footer {
+  background: #fafafa;
+}
 .ant-form-item {
   margin-bottom: 12px;
 }
 .delete-action {
   color: #ffa39e;
+}
+.ant-menu {
+  font-size: 15px;
 }
 .ant-btn .fas {
   font-size: 12px;
