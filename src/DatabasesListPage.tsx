@@ -1,8 +1,7 @@
 import * as React from 'react';
 import { Component, Fragment, useState, useReducer } from "react";
 import { ISchema, ITable, IDatabase, IColumn, DatabaseType, GraphqlType } from "../../voodoo-shared/ISchema";
-import { gql, useQuery } from '@apollo/client';
-
+import { gql, useQuery, useMutation } from '@apollo/client';
 
 import {
     Form,
@@ -31,6 +30,7 @@ import { deepCloneAndMerge } from './utils/deepCloneAndMerge';
 import _ from 'lodash';
 import { stat } from 'fs';
 import { FormInstance } from 'antd/lib/form';
+const deepmerge = require('deepmerge')
 
 const { Option } = Select;
 
@@ -49,35 +49,6 @@ type IActon =
     | { action: "cancel-database-editing" }
 
 
-function reducer(state: IState, action: IActon): IState {
-    switch (action.action) {
-        case "start-add-database":
-            return { ...state, dbEditorMode: "add", newDb: {} as any };
-
-        case "start-edit-database":
-            return { ...state, dbEditorMode: "edit", oldDb: action.oldDb, newDb: action.oldDb };
-
-
-        case "database-fields-changed":
-            state.newDb = { ...state.newDb, ...action.changedFields };
-            return state;
-
-        case "save-database":
-            console.log("save-database", state.newDb)
-            // let index = state.databases?.findIndex((db) => db.name == state.newDb?.name);
-            // if (index == -1)
-            //     throw Error("internal error in save-database");
-            // state.databases[index] = state.newDb as any;
-
-            return { ...state, dbEditorMode: "none", isNeedReloadDbList: true };
-
-        case "cancel-database-editing":
-            return { ...state, dbEditorMode: "none", oldDb: undefined, newDb: undefined, };
-
-        default:
-            throw new Error();
-    }
-}
 
 export function DatabasesListPage() {
 
@@ -88,8 +59,42 @@ export function DatabasesListPage() {
 `;
     const [databaseEditForm] = Form.useForm();
     const { loading, error, data, refetch } = useQuery<{ databases: IDatabase[] }>(query);
-    const [state, dispatch] = useReducer(reducer, { dbEditorMode: "none" } as any);
 
+    const SAVE_DATABASE = gql`
+        mutation ($db: JSON!) {
+            save_database(database: $db)
+        }
+    `;
+    const [saveDatabase] = useMutation(SAVE_DATABASE);
+
+    const reducer = (state: IState, action: IActon): IState => {
+        switch (action.action) {
+            case "start-add-database":
+                return { ...state, dbEditorMode: "add", newDb: {} as any };
+
+            case "start-edit-database":
+                return { ...state, dbEditorMode: "edit", oldDb: action.oldDb, newDb: action.oldDb };
+
+            case "database-fields-changed":
+                //state.newDb = { ...state.newDb, ...action.changedFields };
+                //console.log("database-fields-changed, state.newDb =", state.newDb)
+                //console.log("database-fields-changed, action.changedFields =", action.changedFields)
+                state.newDb = deepmerge(state.newDb, action.changedFields)
+                console.log("database-fields-changed, merged_db =", state.newDb)
+                return state;
+
+            case "save-database":
+                console.log("save-database", state.newDb)
+                saveDatabase({ variables: { db: JSON.stringify(state.newDb) } }).then(() => console.log("saved ===========!!!!!!!!!!!!!"));
+                return { ...state, dbEditorMode: "none", isNeedReloadDbList: true };
+
+            case "cancel-database-editing":
+                return { ...state, dbEditorMode: "none", oldDb: undefined, newDb: undefined, };
+
+            default:
+                throw new Error();
+        }
+    }
 
     //const [changedDbFields, setChangedDbFields] = useState<IDatabase>();
     //const [needResetFields, setneedResetFields] = useState(false);
@@ -116,6 +121,8 @@ export function DatabasesListPage() {
         // //     databaseEditForm.resetFields();
         console.log("React.useEffect");
     });
+
+    const [state, dispatch] = useReducer(reducer, { dbEditorMode: "none" } as any);
 
     console.log("render", state);
 
@@ -186,6 +193,7 @@ export function DatabasesListPage() {
                                 </Popconfirm>
                                 <Button size="small" type="link" style={{ float: "right" }}
                                     onClick={() => {
+                                        console.log("start-edit-database, record=", record);
                                         dispatch({ action: "start-edit-database", oldDb: record })
                                         setTimeout(() => {
                                             databaseEditForm.setFieldsValue(record as any);
