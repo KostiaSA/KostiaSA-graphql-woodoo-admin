@@ -38,15 +38,15 @@ interface IState {
     dbEditorMode: "none" | "add" | "edit",
     oldDb?: IDatabase,  // 
     newDb?: IDatabase,
-    isNeedReloadDbList?: boolean
+    //    isNeedReloadDbList?: boolean
 }
 
-type IActon =
-    | { action: "start-add-database" }
-    | { action: "start-edit-database", oldDb: IDatabase }//, form: FormInstance }
-    | { action: "database-fields-changed", changedFields: IDatabase }
-    | { action: "save-database" }
-    | { action: "cancel-database-editing" }
+// type IActon =
+//     | { action: "start-add-database" }
+//     | { action: "start-edit-database", oldDb: IDatabase }//, form: FormInstance }
+//     | { action: "database-fields-changed", changedFields: IDatabase }
+//     | { action: "save-database" }
+//     | { action: "cancel-database-editing" }
 
 
 
@@ -57,6 +57,8 @@ export function DatabasesListPage() {
         databases
     }
 `;
+    const [state, setState] = useState<IState>({ dbEditorMode: "none" });
+
     const [databaseEditForm] = Form.useForm();
     const { loading, error, data, refetch } = useQuery<{ databases: IDatabase[] }>(query);
 
@@ -67,64 +69,35 @@ export function DatabasesListPage() {
     `;
     const [saveDatabase] = useMutation(SAVE_DATABASE);
 
-    const reducer = (state: IState, action: IActon): IState => {
-        switch (action.action) {
-            case "start-add-database":
-                return { ...state, dbEditorMode: "add", newDb: {} as any };
 
-            case "start-edit-database":
-                return { ...state, dbEditorMode: "edit", oldDb: action.oldDb, newDb: action.oldDb };
-
-            case "database-fields-changed":
-                //state.newDb = { ...state.newDb, ...action.changedFields };
-                //console.log("database-fields-changed, state.newDb =", state.newDb)
-                //console.log("database-fields-changed, action.changedFields =", action.changedFields)
-                state.newDb = deepmerge(state.newDb, action.changedFields)
-                console.log("database-fields-changed, merged_db =", state.newDb)
-                return state;
-
-            case "save-database":
-                console.log("save-database", state.newDb)
-                saveDatabase({ variables: { db: JSON.stringify(state.newDb) } }).then(() => console.log("saved ===========!!!!!!!!!!!!!"));
-                return { ...state, dbEditorMode: "none", isNeedReloadDbList: true };
-
-            case "cancel-database-editing":
-                return { ...state, dbEditorMode: "none", oldDb: undefined, newDb: undefined, };
-
-            default:
-                throw new Error();
-        }
+    const startAddDatabaseAction = () => {
+        let newDb: IDatabase = {} as any;
+        setState({ ...state, dbEditorMode: "add", newDb });
     }
 
-    //const [changedDbFields, setChangedDbFields] = useState<IDatabase>();
-    //const [needResetFields, setneedResetFields] = useState(false);
+    const startEditDatabaseAction = (db: IDatabase) => {
+        setState({ ...state, dbEditorMode: "edit", oldDb: db, newDb: db });
+        setTimeout(() => {
+            databaseEditForm.setFieldsValue(db);
+        }, 1);
+
+    }
+
+    const saveDatabaseAction = async () => {
+        await saveDatabase({ variables: { db: JSON.stringify(state.newDb) } });
+        await refetch();
+        setState({ ...state, dbEditorMode: "none" });
+        console.log("saved ===========!!!!!!!!!!!!!");
+    }
+
+    const cancelDatabaseEditingAction = () => {
+        setState({ ...state, dbEditorMode: "none", oldDb: undefined, newDb: undefined, });
+
+    }
 
     React.useEffect(() => {
-        if (state.isNeedReloadDbList) {
-            refetch();
-            state.isNeedReloadDbList = false;
-        }
-        // setTimeout(() => {
-
-        //     if (state.needResetFields) {
-        //         databaseEditForm.setFieldsValue(state.newDb as any);
-        //     }
-        // }, 1);
-        // if (state.needResetFields && databaseEditForm) {
-        //     //state.needResetFields = false;
-        //     //databaseEditForm.getFieldsValue();
-        //     //console.log("getFieldsValue()", databaseEditForm.getFieldsValue());
-        //     //databaseEditForm.setFieldsValue(state.newDb as any);
-        //     //console.log("resetFields()");
-        // }
-        // // if (state.dbEditorMode == "none")
-        // //     databaseEditForm.resetFields();
         console.log("React.useEffect");
     });
-
-    const [state, dispatch] = useReducer(reducer, { dbEditorMode: "none" } as any);
-
-    console.log("render", state);
 
     if (loading) return <div>'Loading...'</div>;
     if (error) return <div>`Error! ${error.message}`</div>;
@@ -161,7 +134,7 @@ export function DatabasesListPage() {
                         <Button
                             style={{ float: "right" }}
                             size="small"
-                            onClick={() => dispatch({ action: "start-add-database" })}
+                            onClick={startAddDatabaseAction}
                         >
                             + добавить базу даных
                         </Button>
@@ -194,10 +167,8 @@ export function DatabasesListPage() {
                                 <Button size="small" type="link" style={{ float: "right" }}
                                     onClick={() => {
                                         console.log("start-edit-database, record=", record);
-                                        dispatch({ action: "start-edit-database", oldDb: record })
-                                        setTimeout(() => {
-                                            databaseEditForm.setFieldsValue(record as any);
-                                        }, 1);
+                                        startEditDatabaseAction(record);
+                                        //dispatch({ action: "start-edit-database", oldDb: record })
                                     }}
                                 >изм.</Button>
                             </Fragment>
@@ -215,16 +186,12 @@ export function DatabasesListPage() {
                     visible={state.dbEditorMode != "none"}
                     title="Создание новой таблицы"
                     footer={[
-                        <Button key="back" onClick={() => {
-                            dispatch({ action: "cancel-database-editing" })
-                        }}>
+                        <Button key="back" onClick={cancelDatabaseEditingAction}>
                             Отмена
                         </Button>,
-                        <Button key="submit" type="primary" onClick={async () => {
-                            dispatch({ action: "save-database" })
-                        }} >
+                        <Button key="submit" type="primary" onClick={saveDatabaseAction} >
                             Сохранить
-                    </Button>,
+                        </Button>,
                     ]}
                 >
                     <Form
@@ -232,13 +199,10 @@ export function DatabasesListPage() {
                         labelCol={{ span: 7 }}
                         wrapperCol={{ span: 15 }}
                         layout="horizontal"
-                        //initialValues={state.newDb}
                         size="small"
                         form={databaseEditForm}
                         onValuesChange={(changedFields: any, allFields: any) => {
-                            //_.merge(state.newDb || {}, allFields);
-                            //console.log(_.merge(changedDbFields || {}, allFields))
-                            dispatch({ action: "database-fields-changed", changedFields })
+                            state.newDb = deepmerge(state.newDb, changedFields)
                         }}
                     >
                         <Form.Item name="prefix" label="prefix">
