@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Component, Fragment, useState, useReducer } from "react";
 import { ISchema, ITable, IDatabase, IColumn, DatabaseType, GraphqlType } from "../../voodoo-shared/ISchema";
 import { gql, useQuery, useMutation } from '@apollo/client';
+import { ConsoleSqlOutlined } from '@ant-design/icons';
 
 import {
     Form,
@@ -26,29 +27,16 @@ import {
 } from 'antd';
 
 import Column from 'antd/lib/table/Column';
-import { deepCloneAndMerge } from './utils/deepCloneAndMerge';
 import _ from 'lodash';
-import { stat } from 'fs';
-import { FormInstance } from 'antd/lib/form';
 const deepmerge = require('deepmerge')
 
 const { Option } = Select;
 
 interface IState {
     dbEditorMode: "none" | "add" | "edit",
-    oldDb?: IDatabase,  // 
+    //oldDb?: IDatabase,  // 
     newDb?: IDatabase,
-    //    isNeedReloadDbList?: boolean
 }
-
-// type IActon =
-//     | { action: "start-add-database" }
-//     | { action: "start-edit-database", oldDb: IDatabase }//, form: FormInstance }
-//     | { action: "database-fields-changed", changedFields: IDatabase }
-//     | { action: "save-database" }
-//     | { action: "cancel-database-editing" }
-
-
 
 export function DatabasesListPage() {
 
@@ -76,7 +64,7 @@ export function DatabasesListPage() {
     }
 
     const startEditDatabaseAction = (db: IDatabase) => {
-        setState({ ...state, dbEditorMode: "edit", oldDb: db, newDb: db });
+        setState({ ...state, dbEditorMode: "edit", newDb: db });
         setTimeout(() => {
             databaseEditForm.setFieldsValue(db);
         }, 1);
@@ -87,11 +75,11 @@ export function DatabasesListPage() {
         await saveDatabase({ variables: { db: JSON.stringify(state.newDb) } });
         await refetch();
         setState({ ...state, dbEditorMode: "none" });
-        console.log("saved ===========!!!!!!!!!!!!!");
+        console.log("database saved !!!");
     }
 
     const cancelDatabaseEditingAction = () => {
-        setState({ ...state, dbEditorMode: "none", oldDb: undefined, newDb: undefined, });
+        setState({ ...state, dbEditorMode: "none", newDb: undefined, });
 
     }
 
@@ -101,6 +89,19 @@ export function DatabasesListPage() {
 
     if (loading) return <div>'Loading...'</div>;
     if (error) return <div>`Error! ${error.message}`</div>;
+
+    const groupHeaderFormItemLayout = {
+        wrapperCol: {
+            xs: {
+                span: 24,
+                offset: 0,
+            },
+            sm: {
+                span: 16,
+                offset: 7,
+            },
+        },
+    };
 
     return (
 
@@ -176,55 +177,99 @@ export function DatabasesListPage() {
                     }}
                 />
             </Table>
-            {state.dbEditorMode == "222none" as any ? null : (
-                /*  // =============================================== DATABASE FORM =================================================
-                    // =============================================== DATABASE FORM =================================================
-                    // =============================================== DATABASE FORM =================================================
-                    // =============================================== DATABASE FORM =================================================
-                    // =============================================== DATABASE FORM ================================================= */
-                <Modal
-                    visible={state.dbEditorMode != "none"}
-                    title="Создание новой таблицы"
-                    footer={[
-                        <Button key="back" onClick={cancelDatabaseEditingAction}>
-                            Отмена
+
+            {/* // =============================================== DATABASE FORM =================================================
+                // =============================================== DATABASE FORM =================================================
+                // =============================================== DATABASE FORM =================================================
+                // =============================================== DATABASE FORM =================================================
+                // =============================================== DATABASE FORM =================================================  */}
+            <Modal
+                width={700}
+                visible={state.dbEditorMode != "none"}
+                title="Создание новой базы данных"
+                destroyOnClose
+                footer={[
+                    <Button key="back" onClick={cancelDatabaseEditingAction}>
+                        Отмена
                         </Button>,
-                        <Button key="submit" type="primary" onClick={saveDatabaseAction} >
-                            Сохранить
+                    <Button key="submit" type="primary" onClick={saveDatabaseAction} >
+                        Сохранить
                         </Button>,
-                    ]}
+                ]}
+            >
+                <Form
+
+                    labelCol={{ span: 7 }}
+                    wrapperCol={{ span: 15 }}
+                    layout="horizontal"
+                    size="small"
+                    form={databaseEditForm}
+                    //initialValues={state.newDb}
+                    onValuesChange={(changedFields: any, allFields: any) => {
+                        state.newDb = deepmerge(state.newDb, changedFields)
+                    }}
                 >
-                    <Form
+                    <Form.Item {...groupHeaderFormItemLayout}>
+                        <h3>информация для API GRAPHQL</h3>
+                    </Form.Item>
 
-                        labelCol={{ span: 7 }}
-                        wrapperCol={{ span: 15 }}
-                        layout="horizontal"
-                        size="small"
-                        form={databaseEditForm}
-                        onValuesChange={(changedFields: any, allFields: any) => {
-                            state.newDb = deepmerge(state.newDb, changedFields)
-                        }}
+                    <Form.Item name="name" label="имя базы"
+                    //    rules={getSchemaTableNameRules()}
                     >
-                        <Form.Item name="prefix" label="prefix">
-                            <Input style={{ maxWidth: 150 }} disabled />
-                        </Form.Item>
+                        <Input style={{ maxWidth: 400 }} disabled={state.dbEditorMode == "edit"} />
+                    </Form.Item>
 
-                        <Form.Item name="name" label="имя базы"
-                        //    rules={getSchemaTableNameRules()}
-                        >
-                            <Input style={{ maxWidth: 500 }} />
-                        </Form.Item>
-                        <Form.Item name={["connection", "host"]} label="адрес сервера (url)"
-                        //    rules={getSchemaTableNameRules()}
-                        >
-                            <Input style={{ maxWidth: 500 }} />
-                        </Form.Item>
+                    <Form.Item name="prefix" label="prefix" >
+                        <Input style={{ maxWidth: 150 }} />
+                    </Form.Item>
 
-                    </Form>
-                </Modal>
-            )
-            }
-            }
+
+                    <Form.Item {...groupHeaderFormItemLayout}>
+                        <h3>параметры подключения</h3>
+                    </Form.Item>
+
+                    <Form.Item name="type" label="тип сервера БД" >
+                        <Select defaultValue="mssql" style={{ width: 120 }}>
+                            <Option value="jack">Jack</Option>
+                        </Select>
+                    </Form.Item>
+
+                    <Form.Item name={["connection", "host"]} label="адрес сервера (url)"
+                    //    rules={getSchemaTableNameRules()}
+                    >
+                        <Input style={{ maxWidth: 400 }} />
+                    </Form.Item>
+
+                    <Form.Item name={["connection", "port"]} label="порт сервера"
+                    //    rules={getSchemaTableNameRules()}
+                    >
+                        <Input style={{ maxWidth: 100 }} />
+                    </Form.Item>
+
+                    <Form.Item name={["connection", "username"]} label="логин"
+                    //    rules={getSchemaTableNameRules()}
+                    >
+                        <Input style={{ maxWidth: 250 }} />
+                    </Form.Item>
+
+                    <Form.Item name={["connection", "password"]} label="пароль"
+                    //    rules={getSchemaTableNameRules()}
+                    >
+                        <Input.Password style={{ maxWidth: 250 }} />
+                    </Form.Item>
+
+                    <Form.Item name={["connection", "host"]} label="база данных"
+                    //    rules={getSchemaTableNameRules()}
+                    >
+                        <Input style={{ maxWidth: 400 }} />
+                    </Form.Item>
+
+                    <Form.Item {...groupHeaderFormItemLayout}>
+                        <Button size="middle" shape="round" icon={<ConsoleSqlOutlined />}>проверка подключения</Button>
+                    </Form.Item>
+
+                </Form>
+            </Modal>
         </div>
     );
 
