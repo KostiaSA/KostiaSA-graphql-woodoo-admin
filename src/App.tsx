@@ -18,7 +18,7 @@ import {
 import { ApolloProvider, ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
 import { DatabasesListPage } from "./DatabasesListPage";
 import i18n, { i18_langs } from './i18n';
-import { appState, IAppState } from './AppState';
+import { appState, IAppState, storeAppState } from './AppState';
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -40,11 +40,10 @@ export default function App() {
       <div className="App">
         <Layout className="layout">
           <Header style={{ padding: 0 }}>
+
             <div className="logo" style={
               {
                 width: 150,
-                //height: 64,
-                //background: "rgba(255, 255, 255, 0.2)",
                 margin: "12px 12px 12px 42px",
                 float: "left",
                 color: "white",
@@ -54,28 +53,17 @@ export default function App() {
             } >
               Graphgl-Voodoo Admin <span style={{ margin: 5, color: "grey" }} > ver 0.1b</span>
             </div>
+
             <div style={
               {
-                //width: 150,
-                //height: 64,
-                //background: "rgba(255, 255, 255, 0.2)",
-                //margin: "12px 12px 12px 42px",
                 marginTop: 20,
                 marginRight: 10,
                 float: "right",
                 color: "white",
-                //fontSize: 15,
                 lineHeight: "initial"
               }
             }
             >
-              {/* <Select defaultValue="lucy" style={{ width: 120 }}
-                //onChange={(handleChange}
-                >
-                  <Select.Option value="jack">Jack</Select.Option>
-                  <Select.Option value="lucy">Lucy</Select.Option>
-                  <Select.Option value="Yiminghe">yiminghe</Select.Option>
-                </Select> */}
               <Popover
                 placement="bottomRight"
                 trigger="hover"
@@ -85,7 +73,9 @@ export default function App() {
                   return (
                     <div>
                       <Button size="small" type="link" onClick={() => {
-                        setState({ ...appState, lang: lang });
+                        appState.lang = lang;
+                        storeAppState();
+                        setState({ ...appState });
                         i18n.changeLanguage(lang);
                         setIsSelectLangPopoverVisible(false);
                       }}

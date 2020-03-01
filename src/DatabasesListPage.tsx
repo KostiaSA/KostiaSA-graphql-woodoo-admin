@@ -29,7 +29,7 @@ import {
 
 import Column from "antd/lib/table/Column";
 import _ from "lodash";
-const deepmerge = require("deepmerge")
+import { deepMerge } from './utils/deepMerge';
 
 const { Option } = Select;
 
@@ -208,7 +208,7 @@ export function DatabasesListPage() {
                     form={databaseEditForm}
                     //initialValues={state.newDb}
                     onValuesChange={(changedFields: any, allFields: any) => {
-                        state.newDb = deepmerge(state.newDb, changedFields)
+                        state.newDb = deepMerge(state.newDb, changedFields)
                     }}
                 >
                     <Form.Item {...groupHeaderFormItemLayout}>

@@ -1,6 +1,6 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import { appState } from './AppState';
+import { appState, resoreAppState } from './AppState';
 
 
 export const i18_langs = ["ru", "en"];
@@ -44,6 +44,8 @@ const resources = {
                 <Column title={<span style={{ float: "right" }}>{t("действия"}</span>} key="operation"
 
 */
+
+resoreAppState();
 
 i18n
     .use(initReactI18next) // passes i18n down to react-i18next
