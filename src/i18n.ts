@@ -1,8 +1,10 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import { appState } from './AppState';
 
 
 export const i18_langs = ["ru", "en"];
+
 // the translations
 // (tip move them in a JSON file and import them)
 const resources = {
@@ -48,7 +50,7 @@ i18n
     .init({
         resources,
         //lng: "en",
-        lng: "ru",
+        lng: appState.lang,
 
         keySeparator: false, // we do not use keys in form messages.welcome
 
