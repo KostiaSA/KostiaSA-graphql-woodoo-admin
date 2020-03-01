@@ -9,6 +9,7 @@ import {
     Route,
     Link
 } from "react-router-dom";
+import './i18n';
 
 
 class Root extends Component<any> {

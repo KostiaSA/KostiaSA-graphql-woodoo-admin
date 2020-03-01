@@ -1,8 +1,9 @@
-import * as React from 'react';
+import * as React from "react";
 import { Component, Fragment, useState, useReducer } from "react";
 import { ISchema, ITable, IDatabase, IColumn, DatabaseType, GraphqlType } from "../../voodoo-shared/ISchema";
-import { gql, useQuery, useMutation } from '@apollo/client';
-import { ConsoleSqlOutlined } from '@ant-design/icons';
+import { gql, useQuery, useMutation } from "@apollo/client";
+import { ConsoleSqlOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
 
 import {
     Form,
@@ -24,11 +25,11 @@ import {
     Tag,
     Popconfirm,
     Modal,
-} from 'antd';
+} from "antd";
 
-import Column from 'antd/lib/table/Column';
-import _ from 'lodash';
-const deepmerge = require('deepmerge')
+import Column from "antd/lib/table/Column";
+import _ from "lodash";
+const deepmerge = require("deepmerge")
 
 const { Option } = Select;
 
@@ -39,6 +40,7 @@ interface IState {
 }
 
 export function DatabasesListPage() {
+    const { t, i18n } = useTranslation();
 
     let query = gql`
     {
@@ -87,7 +89,7 @@ export function DatabasesListPage() {
         console.log("React.useEffect");
     });
 
-    if (loading) return <div>'Loading...'</div>;
+    if (loading) return <div>"Loading..."</div>;
     if (error) return <div>`Error! ${error.message}`</div>;
 
     const groupHeaderFormItemLayout = {
@@ -122,7 +124,7 @@ export function DatabasesListPage() {
                 </Col>
             </Row> */}
             <Row>
-                <Col offset={0}><h2>Список баз данных</h2></Col>
+                <Col offset={0}><h2>{t("Список баз данных для API")}</h2></Col>
             </Row>
             <Table
                 dataSource={data?.databases}
@@ -137,33 +139,33 @@ export function DatabasesListPage() {
                             size="small"
                             onClick={startAddDatabaseAction}
                         >
-                            + добавить базу даных
+                            {t("+ добавить базу даных")}
                         </Button>
                     </div>}
             >
-                <Column title="api-имя" dataIndex="name" key="name" className="database-text-color" />
-                <Column title="api-префикс" dataIndex="prefix" key="prefix" className="database-text-color" />
-                <Column title="описание" dataIndex="description" key="description" className="database-text-color" /> }
-                <Column title="тип сервера" dataIndex="type" key="package.name" />
+                <Column title={t("api-имя")} dataIndex="name" key="name" className="database-text-color" />
+                <Column title={t("api-префикс")} dataIndex="prefix" key="prefix" className="database-text-color" />
+                <Column title={t("описание")} dataIndex="description" key="description" className="database-text-color" /> }
+                <Column title={t("тип сервера")} dataIndex="type" key="package.name" />
                 <Column
-                    title="адрес сервера (URL)"
+                    title={t("адрес сервера (URL)")}
                     key="connection.host"
                     render={(text, record: IDatabase, index) => <span>{record.connection.host}:{record.connection.port}</span>}
                 />
-                <Column title="имя базы данных" dataIndex={["connection", "database"]} key="connection.database" />
-                <Column title="логин" dataIndex={["connection", "username"]} key="connection.username" />
-                <Column title={<span style={{ float: "right" }}>действия</span>} key="operation"
+                <Column title={t("имя базы данных")} dataIndex={["connection", "database"]} key="connection.database" />
+                <Column title={t("логин")} dataIndex={["connection", "username"]} key="connection.username" />
+                <Column title={<span style={{ float: "right" }}>{t("действия")}</span>} key="operation"
                     render={(text, record: IDatabase, index) => {
                         return (
                             <Fragment>
                                 <Popconfirm
-                                    title={`Удалить таблицу '${record.name}'?`}
+                                    title={`Удалить таблицу "${record.name}"?`}
                                     okText="Да"
                                     cancelText="Нет"
                                     onConfirm={async () => {
                                         //await this.deleteColumn(record);
                                     }}>
-                                    <Button size="small" type="link" danger style={{ float: "right", cursor: "pointer" }}>удал.</Button>
+                                    <Button size="small" type="link" danger style={{ float: "right", cursor: "pointer" }}>{t("удал.")}</Button>
                                 </Popconfirm>
                                 <Button size="small" type="link" style={{ float: "right" }}
                                     onClick={() => {
@@ -171,7 +173,7 @@ export function DatabasesListPage() {
                                         startEditDatabaseAction(record);
                                         //dispatch({ action: "start-edit-database", oldDb: record })
                                     }}
-                                >изм.</Button>
+                                >{t("изм.")}</Button>
                             </Fragment>
                         )
                     }}
