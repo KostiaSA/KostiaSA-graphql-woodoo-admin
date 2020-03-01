@@ -3,7 +3,7 @@ import logo from './logo.svg';
 import Button from 'antd/es/button';
 //import './App.css';
 //import Layout from 'antd/es/layout';
-import { Menu, Layout } from 'antd';
+import { Menu, Layout, Select, Popover, Divider } from 'antd';
 import { Component } from "react";
 import SubMenu from "antd/lib/menu/SubMenu";
 
@@ -17,6 +17,7 @@ import {
 
 import { ApolloProvider, ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
 import { DatabasesListPage } from "./DatabasesListPage";
+import { i18_langs } from './i18n';
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -28,6 +29,7 @@ const client = new ApolloClient({
 });
 
 export default class App extends Component<any> {
+
   render() {
     return (
       <ApolloProvider client={client}>
@@ -47,6 +49,39 @@ export default class App extends Component<any> {
                 }
               } >
                 Graphgl-Voodoo Admin <span style={{ margin: 5, color: "grey" }} > ver 0.1b</span>
+              </div>
+              <div style={
+                {
+                  //width: 150,
+                  //height: 64,
+                  //background: "rgba(255, 255, 255, 0.2)",
+                  //margin: "12px 12px 12px 42px",
+                  marginTop: 20,
+                  marginRight: 10,
+                  float: "right",
+                  color: "white",
+                  //fontSize: 15,
+                  lineHeight: "initial"
+                }
+              }
+              >
+                {/* <Select defaultValue="lucy" style={{ width: 120 }}
+                //onChange={(handleChange}
+                >
+                  <Select.Option value="jack">Jack</Select.Option>
+                  <Select.Option value="lucy">Lucy</Select.Option>
+                  <Select.Option value="Yiminghe">yiminghe</Select.Option>
+                </Select> */}
+                <Popover placement="bottomRight" trigger="hover" content={i18_langs.map((lang) => {
+                  return (
+                    <div>
+                      <Button size="small" type="link" onClick={() => { }}>{lang}</Button>
+                    </div>
+                  )
+                })}
+                >
+                  <Button ghost size="small" type="link">Ru</Button>
+                </Popover>
               </div>
               <Menu
                 theme="dark"
