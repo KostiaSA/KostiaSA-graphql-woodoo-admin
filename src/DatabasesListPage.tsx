@@ -189,15 +189,15 @@ export function DatabasesListPage() {
             <Modal
                 width={700}
                 visible={state.dbEditorMode != "none"}
-                title="Создание новой базы данных"
+                title={state.dbEditorMode == "add" ? t("Adding_new_database") : t("Editing_database")}
                 destroyOnClose
                 footer={[
                     <Button key="back" onClick={cancelDatabaseEditingAction}>
-                        Отмена
-                        </Button>,
+                        {t("Cancel")}
+                    </Button>,
                     <Button key="submit" type="primary" onClick={saveDatabaseAction} >
-                        Сохранить
-                        </Button>,
+                        {t("Save")}
+                    </Button>,
                 ]}
             >
                 <Form
@@ -213,62 +213,62 @@ export function DatabasesListPage() {
                     }}
                 >
                     <Form.Item {...groupHeaderFormItemLayout}>
-                        <h3>информация для API GRAPHQL</h3>
+                        <h3>{t("API_GRAPHQL_info")}</h3>
                     </Form.Item>
 
-                    <Form.Item name="name" label="имя базы"
+                    <Form.Item name="name" label={t("api_name")}
                     //    rules={getSchemaTableNameRules()}
                     >
                         <Input style={{ maxWidth: 400 }} disabled={state.dbEditorMode == "edit"} />
                     </Form.Item>
 
-                    <Form.Item name="prefix" label="prefix" rules={getDatabaseApiPrefixRules()}>
+                    <Form.Item name="prefix" label={t("api_prefix")} rules={getDatabaseApiPrefixRules()}>
                         <Input style={{ maxWidth: 150 }} />
                     </Form.Item>
 
 
                     <Form.Item {...groupHeaderFormItemLayout}>
-                        <h3>параметры подключения</h3>
+                        <h3>{t("connection_options")}</h3>
                     </Form.Item>
 
-                    <Form.Item name="type" label="тип сервера БД" >
+                    <Form.Item name="type" label={t("server_type")} >
                         <Select defaultValue="mssql" style={{ width: 120 }}>
                             <Option value="jack">Jack</Option>
                         </Select>
                     </Form.Item>
 
-                    <Form.Item name={["connection", "host"]} label="адрес сервера (url)"
+                    <Form.Item name={["connection", "host"]} label={t("server_host")}
                     //    rules={getSchemaTableNameRules()}
                     >
                         <Input style={{ maxWidth: 400 }} />
                     </Form.Item>
 
-                    <Form.Item name={["connection", "port"]} label="порт сервера"
+                    <Form.Item name={["connection", "port"]} label={t("server_port")}
                     //    rules={getSchemaTableNameRules()}
                     >
                         <Input style={{ maxWidth: 100 }} />
                     </Form.Item>
 
-                    <Form.Item name={["connection", "username"]} label="логин"
+                    <Form.Item name={["connection", "username"]} label={t("login")}
                     //    rules={getSchemaTableNameRules()}
                     >
                         <Input style={{ maxWidth: 250 }} />
                     </Form.Item>
 
-                    <Form.Item name={["connection", "password"]} label="пароль"
+                    <Form.Item name={["connection", "password"]} label={t("password")}
                     //    rules={getSchemaTableNameRules()}
                     >
                         <Input.Password style={{ maxWidth: 250 }} />
                     </Form.Item>
 
-                    <Form.Item name={["connection", "host"]} label="база данных"
+                    <Form.Item name={["connection", "host"]} label={t("database")}
                     //    rules={getSchemaTableNameRules()}
                     >
                         <Input style={{ maxWidth: 400 }} />
                     </Form.Item>
 
                     <Form.Item {...groupHeaderFormItemLayout}>
-                        <Button size="middle" shape="round" icon={<ConsoleSqlOutlined />}>проверка подключения</Button>
+                        <Button size="middle" shape="round" icon={<ConsoleSqlOutlined />}>{t("check_connection")}</Button>
                     </Form.Item>
 
                 </Form>
