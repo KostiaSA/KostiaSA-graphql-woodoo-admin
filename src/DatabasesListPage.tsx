@@ -1,6 +1,6 @@
 import * as React from "react";
-import { Component, Fragment, useState, useReducer } from "react";
-import { ISchema, ITable, IDatabase, IColumn, DatabaseType, GraphqlType } from "../../voodoo-shared/ISchema";
+import { Fragment, useState, } from "react";
+import { IDatabase, } from "../../voodoo-shared/ISchema";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import { ConsoleSqlOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
@@ -9,23 +9,13 @@ import {
     Form,
     Input,
     Button,
-    Radio,
     Select,
-    Cascader,
-    DatePicker,
     InputNumber,
-    TreeSelect,
-    Switch,
     Col,
-    Affix,
     Row,
-    notification,
-    message,
     Table,
-    Tag,
     Popconfirm,
     Modal,
-    AutoComplete,
 } from "antd";
 
 import Column from "antd/lib/table/Column";
@@ -139,21 +129,6 @@ export function DatabasesListPage() {
     return (
 
         <div style={{ maxWidth: 1200, margin: "20px 20px 0 20px" }}>
-            {/* <Row>
-                <Col span={24}>
-                    <Affix offsetTop={10}>
-                        <Button
-                            type="default"
-                            style={{ float: "right" }}
-                            onClick={async () => {
-                                console.log("save");
-                            }}
-                        >
-                            обновить
-                                </Button>
-                    </Affix>
-                </Col>
-            </Row> */}
             <Row>
                 <Col offset={0}><h2>{t("API_databases_list")}</h2></Col>
             </Row>
@@ -242,7 +217,6 @@ export function DatabasesListPage() {
                     layout="horizontal"
                     size="small"
                     form={databaseEditForm}
-                    //initialValues={state.newDb}
                     onValuesChange={(changedFields: any, allFields: any) => {
                         state.newDb = deepMerge(state.newDb, changedFields)
                     }}
