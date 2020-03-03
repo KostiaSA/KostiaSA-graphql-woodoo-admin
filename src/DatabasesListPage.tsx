@@ -62,6 +62,13 @@ export function DatabasesListPage() {
     `;
     const [saveDatabase] = useMutation(SAVE_DATABASE);
 
+    const DELETE_DATABASE = gql`
+        mutation ($db_name: String) {
+            delete_database(db_name: $db_name)
+        }
+    `;
+    const [deleteDatabase] = useMutation(DELETE_DATABASE);
+
 
     const startAddDatabaseAction = () => {
         let db: IDatabase = {
@@ -96,6 +103,12 @@ export function DatabasesListPage() {
         await refetch();
         setState({ ...state, dbEditorMode: "none" });
         console.log("database saved !!!");
+    }
+
+    const deleteDatabaseAction = async (db_name: string) => {
+        await deleteDatabase({ variables: { db_name: db_name } });
+        await refetch();
+        console.log("database deleted !!!");
     }
 
     const cancelDatabaseEditingAction = () => {
@@ -182,7 +195,7 @@ export function DatabasesListPage() {
                                     okText={t("Yes")}
                                     cancelText={t("No")}
                                     onConfirm={async () => {
-                                        //await this.deleteColumn(record);
+                                        await deleteDatabaseAction(record.name);
                                     }}>
                                     <Button size="small" type="link" danger style={{ float: "right", cursor: "pointer" }}
                                         className={`form-title-color-delete`}
