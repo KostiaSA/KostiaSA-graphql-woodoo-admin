@@ -25,6 +25,7 @@ import {
     Tag,
     Popconfirm,
     Modal,
+    AutoComplete,
 } from "antd";
 
 import Column from "antd/lib/table/Column";
@@ -155,6 +156,7 @@ export function DatabasesListPage() {
                             style={{ float: "right" }}
                             size="small"
                             onClick={startAddDatabaseAction}
+                            className={`form-title-color-add`}
                         >
                             {"+ " + t("add_new_database")}
                         </Button>
@@ -176,19 +178,23 @@ export function DatabasesListPage() {
                         return (
                             <Fragment>
                                 <Popconfirm
-                                    title={`Удалить таблицу "${record.name}"?`}
-                                    okText="Да"
-                                    cancelText="Нет"
+                                    title={t("delete_database?", { name: record.name })}
+                                    okText={t("Yes")}
+                                    cancelText={t("No")}
                                     onConfirm={async () => {
                                         //await this.deleteColumn(record);
                                     }}>
-                                    <Button size="small" type="link" danger style={{ float: "right", cursor: "pointer" }}>{t("delete")}</Button>
+                                    <Button size="small" type="link" danger style={{ float: "right", cursor: "pointer" }}
+                                        className={`form-title-color-delete`}
+                                    >
+                                        {t("delete")}
+                                    </Button>
                                 </Popconfirm>
                                 <Button size="small" type="link" style={{ float: "right" }}
+                                    className={`form-title-color-edit`}
                                     onClick={() => {
-                                        console.log("start-edit-database, record=", record);
+                                        //console.log("start-edit-database, record=", record);
                                         startEditDatabaseAction(record);
-                                        //dispatch({ action: "start-edit-database", oldDb: record })
                                     }}
                                 >{t("edit")}</Button>
                             </Fragment>
@@ -205,7 +211,7 @@ export function DatabasesListPage() {
             <Modal
                 width={700}
                 visible={state.dbEditorMode != "none"}
-                title={state.dbEditorMode == "add" ? t("Adding_new_database") : t("Editing_database")}
+                title={<span className={`form-title-color-${state.dbEditorMode}`}>{state.dbEditorMode == "add" ? t("Adding_new_database") : t("Editing_database")}</span>}
                 destroyOnClose
                 footer={[
                     <Button key="back" onClick={cancelDatabaseEditingAction}>
@@ -229,32 +235,39 @@ export function DatabasesListPage() {
                     }}
                 >
                     <Form.Item {...groupHeaderFormItemLayout}>
-                        <h3>{t("API_GRAPHQL_info")}</h3>
+                        <h3 className={`form-title-color-${state.dbEditorMode}`}>{t("API_GRAPHQL_info")}</h3>
                     </Form.Item>
 
                     <Form.Item name="name" label={t("api_name")} rules={getDatabaseApiNameRules()}
                     //    rules={getSchemaTableNameRules()}
                     >
-                        <Input style={{ maxWidth: 400 }} disabled={state.dbEditorMode == "edit"} />
+                        <Input autoComplete="off" style={{ maxWidth: 400 }} disabled={state.dbEditorMode == "edit"} />
                     </Form.Item>
 
                     <Form.Item name="prefix" label={t("api_prefix")} rules={getDatabaseApiPrefixRules()}>
-                        <Input style={{ maxWidth: 150 }} />
+                        <Input autoComplete="off" style={{ maxWidth: 150 }} />
                     </Form.Item>
 
+                    <Form.Item name="description" label={t("description")}
+                        rules={[{ max: 255, message: t("max_length_exceeded", { name: t("description"), length: 255 }) }]}
+
+                    >
+                        <Input autoComplete="off" style={{ maxWidth: 400 }} />
+                    </Form.Item>
 
                     <Form.Item {...groupHeaderFormItemLayout}>
-                        <h3>{t("connection_options")}</h3>
+                        <h3 className={`form-title-color-${state.dbEditorMode}`}>{t("connection_options")}</h3>
                     </Form.Item>
 
                     <Form.Item name="type" label={t("server_type")} >
                         <Select defaultValue="mssql" style={{ width: 120 }}>
                             {DATABASE_TYPES.map((db) => <Option value={db} key={db} >{db}</Option>)}
-
                         </Select>
                     </Form.Item>
 
-                    <Form.Item name={["connection", "host"]} label={t("server_host")}
+                    <Form.Item
+                        name={["connection", "host"]}
+                        label={t("server_host")}
                         rules={[
                             {
                                 required: true,
@@ -267,31 +280,27 @@ export function DatabasesListPage() {
 
                         ]}
                     >
-                        <Input style={{ maxWidth: 400 }} />
+                        <Input autoComplete="off" style={{ maxWidth: 400 }} />
                     </Form.Item>
 
-                    <Form.Item name={["connection", "port"]} label={t("server_port")}
+                    <Form.Item
+                        name={["connection", "port"]}
+                        label={t("server_port")}
                         rules={[{ type: "integer", min: 0, max: 65535 }]}
                     >
                         <InputNumber max={65535} style={{ maxWidth: 120 }} />
                     </Form.Item>
 
-                    <Form.Item name={["connection", "username"]} label={t("login")}
-                    //    rules={getSchemaTableNameRules()}
-                    >
-                        <Input style={{ maxWidth: 250 }} />
+                    <Form.Item name={["connection", "username"]} label={t("login")}>
+                        <Input autoComplete="off" style={{ maxWidth: 250 }} />
                     </Form.Item>
 
-                    <Form.Item name={["connection", "password"]} label={t("password")}
-                    //    rules={getSchemaTableNameRules()}
-                    >
-                        <Input.Password style={{ maxWidth: 250 }} />
+                    <Form.Item name={["connection", "password"]} label={t("password")} >
+                        <Input.Password autoComplete="off" style={{ maxWidth: 250 }} />
                     </Form.Item>
 
-                    <Form.Item name={["connection", "database"]} label={t("database")}
-                    //    rules={getSchemaTableNameRules()}
-                    >
-                        <Input style={{ maxWidth: 400 }} />
+                    <Form.Item name={["connection", "database"]} label={t("database")}>
+                        <Input autoComplete="off" style={{ maxWidth: 400 }} />
                     </Form.Item>
 
                     <Form.Item {...groupHeaderFormItemLayout}>

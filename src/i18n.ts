@@ -102,6 +102,8 @@ const resources = {
             "Save": "Сохранить",
             "Cancel": "Отмена",
             "Close": "Закрыть",
+            "Yes": "Да",
+            "No": "Нет",
 
             // validation rules
             "bad_identifier": "{{name}} может содержать только латин. буквы, цифры, _ и начинаться с буквы или _",
@@ -116,6 +118,8 @@ const resources = {
             "API_GRAPHQL_info": "информация для API GraphQL",
             "connection_options": "параметры подключения",
             "check_connection": "проверка подключения",
+            "delete_database?": "удалить базу даных '{{name}}' и все ее настройки?",
+
         }
     },
 
@@ -140,6 +144,8 @@ const resources = {
             "Save": "Save",
             "Cancel": "Cancel",
             "Close": "Close",
+            "Yes": "Yes",
+            "No": "No",
 
             // validation rules
             "bad_identifier": "{{name}} can only contain latin. letters, numbers, underscore and begin with a letter or underscore",
@@ -150,11 +156,12 @@ const resources = {
             // DatabasesListPage
             "API_databases_list": "API databases list",
             "add_new_database": "add new database",
-            "Adding_new_database": "Adding new_database",
+            "Adding_new_database": "Adding new database",
             "Editing_database": "Editing database",
             "API_GRAPHQL_info": "GraphQL API information",
             "connection_options": "connection options",
             "check_connection": "check connection",
+            "delete_database?": "delete database '{{name}}' and all its settings?",
 
         }
     }
