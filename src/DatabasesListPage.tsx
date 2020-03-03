@@ -30,6 +30,7 @@ import {
 import Column from "antd/lib/table/Column";
 import _ from "lodash";
 import { deepMerge } from './utils/deepMerge';
+import { getDatabaseApiPrefixRules } from './validators/validators';
 
 const { Option } = Select;
 
@@ -124,7 +125,7 @@ export function DatabasesListPage() {
                 </Col>
             </Row> */}
             <Row>
-                <Col offset={0}><h2>{t("Список баз данных для API")}</h2></Col>
+                <Col offset={0}><h2>{t("API_databases_list")}</h2></Col>
             </Row>
             <Table
                 dataSource={data?.databases}
@@ -139,22 +140,22 @@ export function DatabasesListPage() {
                             size="small"
                             onClick={startAddDatabaseAction}
                         >
-                            {t("+ добавить базу даных")}
+                            {"+ " + t("add_new_database")}
                         </Button>
                     </div>}
             >
-                <Column title={t("api-имя")} dataIndex="name" key="name" className="database-text-color" />
-                <Column title={t("api-префикс")} dataIndex="prefix" key="prefix" className="database-text-color" />
-                <Column title={t("описание")} dataIndex="description" key="description" className="database-text-color" /> }
-                <Column title={t("тип сервера")} dataIndex="type" key="package.name" />
+                <Column title={t("api_name")} dataIndex="name" key="name" className="database-text-color" />
+                <Column title={t("api_prefix")} dataIndex="prefix" key="prefix" className="database-text-color" />
+                <Column title={t("description")} dataIndex="description" key="description" className="database-text-color" /> }
+                <Column title={t("server_type")} dataIndex="type" key="package.name" />
                 <Column
-                    title={t("адрес сервера (URL)")}
+                    title={t("server_host")}
                     key="connection.host"
                     render={(text, record: IDatabase, index) => <span>{record.connection.host}:{record.connection.port}</span>}
                 />
-                <Column title={t("имя базы данных")} dataIndex={["connection", "database"]} key="connection.database" />
-                <Column title={t("логин")} dataIndex={["connection", "username"]} key="connection.username" />
-                <Column title={<span style={{ float: "right" }}>{t("действия")}</span>} key="operation"
+                <Column title={t("database_name")} dataIndex={["connection", "database"]} key="connection.database" />
+                <Column title={t("login")} dataIndex={["connection", "username"]} key="connection.username" />
+                <Column title={<span style={{ float: "right" }}>{t("actions")}</span>} key="operation"
                     render={(text, record: IDatabase, index) => {
                         return (
                             <Fragment>
@@ -165,7 +166,7 @@ export function DatabasesListPage() {
                                     onConfirm={async () => {
                                         //await this.deleteColumn(record);
                                     }}>
-                                    <Button size="small" type="link" danger style={{ float: "right", cursor: "pointer" }}>{t("удал.")}</Button>
+                                    <Button size="small" type="link" danger style={{ float: "right", cursor: "pointer" }}>{t("delete")}</Button>
                                 </Popconfirm>
                                 <Button size="small" type="link" style={{ float: "right" }}
                                     onClick={() => {
@@ -173,7 +174,7 @@ export function DatabasesListPage() {
                                         startEditDatabaseAction(record);
                                         //dispatch({ action: "start-edit-database", oldDb: record })
                                     }}
-                                >{t("изм.")}</Button>
+                                >{t("edit")}</Button>
                             </Fragment>
                         )
                     }}
@@ -221,7 +222,7 @@ export function DatabasesListPage() {
                         <Input style={{ maxWidth: 400 }} disabled={state.dbEditorMode == "edit"} />
                     </Form.Item>
 
-                    <Form.Item name="prefix" label="prefix" >
+                    <Form.Item name="prefix" label="prefix" rules={getDatabaseApiPrefixRules()}>
                         <Input style={{ maxWidth: 150 }} />
                     </Form.Item>
 

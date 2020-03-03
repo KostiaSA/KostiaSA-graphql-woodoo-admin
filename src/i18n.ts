@@ -8,56 +8,76 @@ export const i18_langs = ["ru", "en"];
 // the translations
 // (tip move them in a JSON file and import them)
 const resources = {
+    ru: {
+        translation: {
+            // common
+            "api_prefix": "api-префикс",
+            "database": "база данных",
+            "databases": "базы данных",
+            "description": "описание",
+            "server_type": "тип сервера",
+            "server host": "адрес сервера (URL)",
+            "database_name": "имя базы данных",
+            "api_name": "api-имя",
+            "login": "логин",
+            "actions": "действия",
+            "delete": "удал.",
+            "edit": "изм.",
+
+            // validation rules
+            "bad_identifier": "{{name}} может содержать только латин. буквы, цифры, _ и начинаться с буквы или _",
+            "cannot_be_empty": "{{name}} не может быть пустым",
+
+            // DatabasesListPage
+            "API_databases_list": "список баз данных для API",
+            "add_new_database": "добавить базу даных",
+        }
+    },
+
     en: {
         translation: {
+            // common
+            "api_prefix": "api prefix",
+            "database": "database",
+            "databases": "databases",
+            "description": "description",
+            "server_type": "server type",
+            "server_host": "server host",
+            "database_name": "database name",
+            "api_name": "api name",
+            "login": "login",
+            "actions": "actions",
+            "delete": "delete",
+            "edit": "edit",
+
+            // validation rules
+            "bad_identifier": "{{name}} can only contain latin. letters, numbers, underscore and begin with a letter or underscore",
+            "cannot_be_empty": "{{name}} cannot be empty",
+
             // DatabasesListPage
-            "Базы данных": "Databases",
-            "Список баз данных для API": "API databases list",
-            "api-имя": "api name",
-            "api-префикс": "api prefix",
-            "описание": "description",
-            "тип сервера": "server type",
-            "адрес сервера (URL)": "server host",
-            "имя базы данных": "database name",
-            "логин": "login",
-            "действия": "actions",
-            "удал.": "delete",
-            "изм.": "edit",
-            "+ добавить базу даных": "+ add new database",
+            "API_databases_list": "API databases list",
+            "add_new_database": "add new database",
 
         }
     }
 };
 
 /*
-                <Column title={t("api-имя")} dataIndex="name" key="name" className="database-text-color" />
-                <Column title={t("api-префикс")} dataIndex="prefix" key="prefix" className="database-text-color" />
-                <Column title={t("описание")} dataIndex="description" key="description" className="database-text-color" /> }
-                <Column title={t("тип сервера")} dataIndex="type" key="package.name" />
-                <Column
-                    title={t("адрес сервера (URL)")}
-                key="connection.host"
-                    render={(text, record: IDatabase, index) => <span>{record.connection.host}:{record.connection.port}</span>}
-                />
-                <Column title={t("имя базы данных")} dataIndex={["connection", "database"]} key="connection.database" />
-                <Column title={t("логин")} dataIndex={["connection", "username"]} key="connection.username" />
-                <Column title={<span style={{ float: "right" }}>{t("действия"}</span>} key="operation"
 
 */
 
 resoreAppState();
 
 i18n
-    .use(initReactI18next) // passes i18n down to react-i18next
+    .use(initReactI18next)
     .init({
         resources,
-        //lng: "en",
         lng: appState.lang,
 
         keySeparator: false, // we do not use keys in form messages.welcome
 
         interpolation: {
-            escapeValue: false // react already safes from xss
+            escapeValue: false
         }
     });
 
