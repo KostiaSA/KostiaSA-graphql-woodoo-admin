@@ -30,7 +30,8 @@ import {
 import Column from "antd/lib/table/Column";
 import _ from "lodash";
 import { deepMerge } from './utils/deepMerge';
-import { getDatabaseApiPrefixRules } from './validators/validators';
+import { getDatabaseApiPrefixRules, getDatabaseApiNameRules } from './validators/validators';
+import { DATABASE_TYPES, GET_DATABASE_DEFAULT_PORT } from './const';
 
 const { Option } = Select;
 
@@ -62,8 +63,23 @@ export function DatabasesListPage() {
 
 
     const startAddDatabaseAction = () => {
-        let newDb: IDatabase = {} as any;
-        setState({ ...state, dbEditorMode: "add", newDb });
+        let db: IDatabase = {
+            name: "db1",
+            prefix: "sql1",
+            type: "SQL Server",
+            description: "",
+            connection: {
+                host: "localhost",
+                port: GET_DATABASE_DEFAULT_PORT("SQL Server"),
+                username: "sa",
+                password: "",
+                database: "",
+            }
+        };
+        setState({ ...state, dbEditorMode: "add", newDb: db });
+        setTimeout(() => {
+            databaseEditForm.setFieldsValue(db);
+        }, 1);
     }
 
     const startEditDatabaseAction = (db: IDatabase) => {
@@ -216,7 +232,7 @@ export function DatabasesListPage() {
                         <h3>{t("API_GRAPHQL_info")}</h3>
                     </Form.Item>
 
-                    <Form.Item name="name" label={t("api_name")}
+                    <Form.Item name="name" label={t("api_name")} rules={getDatabaseApiNameRules()}
                     //    rules={getSchemaTableNameRules()}
                     >
                         <Input style={{ maxWidth: 400 }} disabled={state.dbEditorMode == "edit"} />
@@ -233,20 +249,31 @@ export function DatabasesListPage() {
 
                     <Form.Item name="type" label={t("server_type")} >
                         <Select defaultValue="mssql" style={{ width: 120 }}>
-                            <Option value="jack">Jack</Option>
+                            {DATABASE_TYPES.map((db) => <Option value={db} key={db} >{db}</Option>)}
+
                         </Select>
                     </Form.Item>
 
                     <Form.Item name={["connection", "host"]} label={t("server_host")}
-                    //    rules={getSchemaTableNameRules()}
+                        rules={[
+                            {
+                                required: true,
+                                message: t("cannot_be_empty", { name: t("server_host") })
+                            },
+                            {
+                                max: 255,
+                                message: t("max_length_exceeded", { name: t("server_host"), length: 255 })
+                            },
+
+                        ]}
                     >
                         <Input style={{ maxWidth: 400 }} />
                     </Form.Item>
 
                     <Form.Item name={["connection", "port"]} label={t("server_port")}
-                    //    rules={getSchemaTableNameRules()}
+                        rules={[{ type: "integer", min: 0, max: 65535 }]}
                     >
-                        <Input style={{ maxWidth: 100 }} />
+                        <InputNumber max={65535} style={{ maxWidth: 120 }} />
                     </Form.Item>
 
                     <Form.Item name={["connection", "username"]} label={t("login")}
@@ -261,7 +288,7 @@ export function DatabasesListPage() {
                         <Input.Password style={{ maxWidth: 250 }} />
                     </Form.Item>
 
-                    <Form.Item name={["connection", "host"]} label={t("database")}
+                    <Form.Item name={["connection", "database"]} label={t("database")}
                     //    rules={getSchemaTableNameRules()}
                     >
                         <Input style={{ maxWidth: 400 }} />

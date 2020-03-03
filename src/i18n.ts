@@ -3,8 +3,81 @@ import { initReactI18next } from "react-i18next";
 import { appState, resoreAppState } from './AppState';
 
 
+//import enEN from 'antd/es/locale/en_EN';
+import ruRU from 'antd/es/locale/ru_RU';
+
 export const i18_langs = ["ru", "en"];
 
+
+export function getAntdLocale(lang: string): any {
+    switch (lang) {
+        case "ru": return ruRU;
+        case "en": return undefined;
+        default: throw new Error("getAntdLocale(): todo for lang " + lang);
+    }
+}
+
+export function getAntdValidatorMessages(lang: string): any {
+    switch (lang) {
+        case "ru": return validatorMessages_ru();
+        case "en": return undefined;
+        default: throw new Error("getAntdValidationMessages(): todo for lang " + lang);
+    }
+}
+
+
+function validatorMessages_ru(): any {
+
+    const typeTemplate = "'${name}' требуется тип ${type}";
+
+    return {
+        default: "неверно заполнено поле '${name}'",
+        required: "'${name}' надо заполнить",
+        enum: "'${name}' должно быть одно из [${enum}]",
+        whitespace: "'${name}' надо заполнить",
+        date: {
+            format: "'${name}' неверный формат даты",
+            parse: "'${name}' неверная дата",
+            invalid: "'${name}' неверная дата",
+        },
+        types: {
+            string: typeTemplate,
+            method: typeTemplate,
+            array: typeTemplate,
+            object: typeTemplate,
+            number: typeTemplate,
+            date: typeTemplate,
+            boolean: typeTemplate,
+            integer: typeTemplate,
+            float: typeTemplate,
+            regexp: typeTemplate,
+            email: typeTemplate,
+            url: typeTemplate,
+            hex: typeTemplate,
+        },
+        string: {
+            len: "'${name}' длина строки должна быть ровно ${len} симв.",
+            min: "'${name}' длина строки должна быть не менее ${min} симв.",
+            max: "'${name}' длина строки должна быть не более ${max} симв.",
+            range: "'${name}' длина строки должна быть от ${min} до ${max} симв.",
+        },
+        number: {
+            len: "'${name}' должен быть равно ${len}",
+            min: "'${name}' должен быть не менее ${min}",
+            max: "'${name}' должен быть не более ${max}",
+            range: "'${name}' должен быть от ${min} до ${max}",
+        },
+        array: {
+            len: "'${name}' длина массива должна быть ровно ${len}",
+            min: "'${name}' длина массива не должна быть меньше ${min}",
+            max: "'${name}' длина массива не должна быть больше ${max}",
+            range: "'${name}' длина массива не должна быть от ${min} до ${max}",
+        },
+        pattern: {
+            mismatch: "'${name}' не подходит по шаблону ${pattern}",
+        },
+    };
+}
 // the translations
 // (tip move them in a JSON file and import them)
 const resources = {

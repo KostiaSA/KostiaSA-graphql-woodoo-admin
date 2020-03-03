@@ -27,12 +27,12 @@ export function getDatabaseApiNameRules(): Rule[] {
             required: true,
             message: t("cannot_be_empty", { name: t("api_name") })
         },
-        {
-            validator: async (rule: Rule, value: string) => {
-                if (!GraphQL_indentifier_regexp.test(value))
-                    throw new Error(t("bad_identifier", { name: t("api_name") }));
-            },
-        },
+        // {
+        //     validator: async (rule: Rule, value: string) => {
+        //         if (!GraphQL_indentifier_regexp.test(value))
+        //             throw new Error(t("bad_identifier", { name: t("api_name") }));
+        //     },
+        // },
         {
             max: 63,
             message: t("max_length_exceeded", { name: t("api_name"), length: 63 })
