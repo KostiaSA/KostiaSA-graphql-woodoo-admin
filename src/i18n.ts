@@ -107,6 +107,7 @@ const resources = {
             "state": "статус",
             "connected": "подключено",
             "error": "ошибка",
+            "checking...": "проверка...",
 
             // validation rules
             "bad_identifier": "{{name}} может содержать только латин. буквы, цифры, _ и начинаться с буквы или _",
@@ -152,6 +153,7 @@ const resources = {
             "state": "state",
             "connected": "connected",
             "error": "error",
+            "checking...": "checking...",
 
             // validation rules
             "bad_identifier": "{{name}} can only contain latin. letters, numbers, underscore and begin with a letter or underscore",

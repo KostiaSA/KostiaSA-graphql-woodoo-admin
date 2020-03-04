@@ -32,7 +32,6 @@ const { Option } = Select;
 
 interface IState {
     dbEditorMode: "none" | "add" | "edit",
-    //oldDb?: IDatabase,  // 
     newDb?: IDatabase,
 }
 
@@ -40,13 +39,10 @@ export function DatabasesListPage() {
     const { t, i18n } = useTranslation();
 
     let query = gql`
-    {
-        databases
-    }
-`;
-    //const appStateContext = useContext(AppStateContext);
-
-    //const [ui_disabled, set_ui_disabled] = useState<boolean>(false);
+        {
+            databases
+        }
+    `;
 
     const [state, setState] = useState<IState>({ dbEditorMode: "none" });
 
@@ -99,12 +95,14 @@ export function DatabasesListPage() {
         await saveDatabase({ variables: { db: JSON.stringify(state.newDb) } });
         await refetch();
         setState({ ...state, dbEditorMode: "none" });
+        setDbState({});
         console.log("database saved !!!");
     }
 
     const deleteDatabaseAction = async (db_name: string) => {
         await deleteDatabase({ variables: { db_name: db_name } });
         await refetch();
+        setDbState({});
         console.log("database deleted !!!");
     }
 
@@ -131,10 +129,37 @@ export function DatabasesListPage() {
         },
     };
 
+    const [dbState, setDbState] = useState<{ [db_name: string]: string }>({});
+
     return useObserver(() => {
 
         if (loading) return <div>"Loading..."</div>;
         if (error) return <div>`Error! ${error.message}`</div>;
+
+        if (data) {
+            let needForceUpdate = false;
+            for (let db of data.databases) {
+                if (!dbState[db.name]) {
+                    dbState[db.name] = t("checking...");
+                    needForceUpdate = true;
+                    setTimeout(async () => {
+                        let query = gql`
+                                        query ($db_type: String, $connection: JSON) {
+                                            check_database_connection(db_type: $db_type, connection:$connection )
+                                        }
+                                    `;
+                        let res = await doQuery(query, { db_type: db.type, connection: JSON.stringify(db.connection) });
+                        if (res.check_database_connection == "Ok")
+                            dbState[db.name] = t("connected");
+                        else
+                            dbState[db.name] = t("error");
+                        setDbState({ ...dbState });
+                    }, 1);
+                }
+            }
+            if (needForceUpdate)
+                setDbState({ ...dbState });
+        }
 
         return (
             <div style={{ maxWidth: 1200, margin: "20px 20px 0 20px" }}>
@@ -159,11 +184,20 @@ export function DatabasesListPage() {
                             </Button>
                         </div>}
                 >
-                    <Column title={t("state")} dataIndex="state" key="state" />
+                    <Column title={t("state")} dataIndex="state" key="state"
+                        render={(text: string, record: IDatabase) => {
+                            if (dbState[record.name] == t("connected"))
+                                return <span style={{ color: "green" }}>{dbState[record.name]}</span>
+                            else if (dbState[record.name] == t("error"))
+                                return <span style={{ color: "red" }}>{dbState[record.name]}</span>
+                            else
+                                return <span style={{ color: "gray" }}>{dbState[record.name]}</span>
+                        }}
+                    />
                     <Column title={t("api_name")} dataIndex="name" key="name" className="database-text-color" />
                     <Column title={t("api_prefix")} dataIndex="prefix" key="prefix" className="database-text-color" />
                     <Column title={t("description")} dataIndex="description" key="description" className="database-text-color" /> }
-                <Column title={t("server_type")} dataIndex="type" key="package.name" />
+                    <Column title={t("server_type")} dataIndex="type" key="package.name" />
                     <Column
                         title={t("server_host")}
                         key="connection.host"
