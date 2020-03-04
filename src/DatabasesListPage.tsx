@@ -67,15 +67,6 @@ export function DatabasesListPage() {
     `;
     const [deleteDatabase] = useMutation(DELETE_DATABASE);
 
-
-    // const CHECK_DATABASE_CONNECTION = gql`
-    //     query ($db_type: String, @connection: JSON) {
-    //         check_database_connection(db_name: $db_name)
-    //     }
-    // `;
-    // const [checkDbConnection, checkDbConnectionResult] = useLazyQuery(CHECK_DATABASE_CONNECTION);
-
-
     const startAddDatabaseAction = () => {
         let db: IDatabase = {
             name: "db1",
@@ -123,7 +114,7 @@ export function DatabasesListPage() {
     }
 
     React.useEffect(() => {
-        console.log("React.useEffect");
+        //console.log("React.useEffect");
     });
 
 
@@ -168,6 +159,7 @@ export function DatabasesListPage() {
                             </Button>
                         </div>}
                 >
+                    <Column title={t("state")} dataIndex="state" key="state" />
                     <Column title={t("api_name")} dataIndex="name" key="name" className="database-text-color" />
                     <Column title={t("api_prefix")} dataIndex="prefix" key="prefix" className="database-text-color" />
                     <Column title={t("description")} dataIndex="description" key="description" className="database-text-color" /> }

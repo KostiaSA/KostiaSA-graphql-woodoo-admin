@@ -1,6 +1,6 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import { appState, resoreAppState } from './AppState';
+import { appState, getDefaultAppState } from './AppState';
 
 
 //import enEN from 'antd/es/locale/en_EN';
@@ -104,6 +104,9 @@ const resources = {
             "Close": "Закрыть",
             "Yes": "Да",
             "No": "Нет",
+            "state": "статус",
+            "connected": "подключено",
+            "error": "ошибка",
 
             // validation rules
             "bad_identifier": "{{name}} может содержать только латин. буквы, цифры, _ и начинаться с буквы или _",
@@ -146,6 +149,9 @@ const resources = {
             "Close": "Close",
             "Yes": "Yes",
             "No": "No",
+            "state": "state",
+            "connected": "connected",
+            "error": "error",
 
             // validation rules
             "bad_identifier": "{{name}} can only contain latin. letters, numbers, underscore and begin with a letter or underscore",
@@ -171,13 +177,13 @@ const resources = {
 
 */
 
-resoreAppState();
+//resoreAppState();
 
 i18n
     .use(initReactI18next)
     .init({
         resources,
-        lng: appState.lang,
+        lng: getDefaultAppState().lang,
 
         keySeparator: false, // we do not use keys in form messages.welcome
 
