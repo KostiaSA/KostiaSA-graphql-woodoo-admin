@@ -15,20 +15,21 @@ import {
 } from "react-router-dom";
 
 
-import { ApolloProvider, ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
+import { ApolloProvider } from '@apollo/client';
 import { DatabasesListPage } from "./DatabasesListPage";
 import i18n, { i18_langs } from './i18n';
 import { appState, IAppState, storeAppState } from './AppState';
 import { getAntdLocale, getAntdValidatorMessages } from './i18n';
+import { apolloClient } from "./apolloClient";
 
 const { Header, Content, Footer, Sider } = Layout;
 
-const client = new ApolloClient({
-  cache: new InMemoryCache(),
-  link: new HttpLink({
-    uri: `${window.location.protocol}//${window.location.hostname}:${Number.parseInt(window.location.port) + 1}`,
-  })
-});
+// const client = new ApolloClient({
+//   cache: new InMemoryCache(),
+//   link: new HttpLink({
+//     uri: `${window.location.protocol}//${window.location.hostname}:${Number.parseInt(window.location.port) + 1}`,
+//   })
+// });
 
 export default function App() {
 
@@ -38,7 +39,7 @@ export default function App() {
 
   return (
     <ConfigProvider locale={getAntdLocale(appState.lang)} form={{ validateMessages: getAntdValidatorMessages(appState.lang) }}>
-      <ApolloProvider client={client}>
+      <ApolloProvider client={apolloClient}>
         <div className="App">
           <Layout className="layout">
             <Header style={{ padding: 0 }}>

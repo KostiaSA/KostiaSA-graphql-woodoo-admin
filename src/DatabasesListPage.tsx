@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Fragment, useState, } from "react";
 import { IDatabase, } from "../../voodoo-shared/ISchema";
-import { gql, useQuery, useMutation } from "@apollo/client";
+import { gql, useQuery, useMutation, useLazyQuery } from "@apollo/client";
 import { ConsoleSqlOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 
@@ -23,6 +23,7 @@ import _ from "lodash";
 import { deepMerge } from './utils/deepMerge';
 import { getDatabaseApiPrefixRules, getDatabaseApiNameRules } from './validators/validators';
 import { DATABASE_TYPES, GET_DATABASE_DEFAULT_PORT } from './const';
+import { apolloClient } from "./apolloClient";
 
 const { Option } = Select;
 
@@ -58,6 +59,14 @@ export function DatabasesListPage() {
         }
     `;
     const [deleteDatabase] = useMutation(DELETE_DATABASE);
+
+
+    // const CHECK_DATABASE_CONNECTION = gql`
+    //     query ($db_type: String, @connection: JSON) {
+    //         check_database_connection(db_name: $db_name)
+    //     }
+    // `;
+    // const [checkDbConnection, checkDbConnectionResult] = useLazyQuery(CHECK_DATABASE_CONNECTION);
 
 
     const startAddDatabaseAction = () => {
@@ -291,7 +300,25 @@ export function DatabasesListPage() {
                     </Form.Item>
 
                     <Form.Item {...groupHeaderFormItemLayout}>
-                        <Button size="middle" shape="round" icon={<ConsoleSqlOutlined />}>{t("check_connection")}</Button>
+                        <Button size="middle" shape="round" icon={<ConsoleSqlOutlined />}
+                            onClick={async () => {
+                                let query = gql`
+                                    query ($db_type: String, $connection: JSON) {
+                                        check_database_connection(db_type: $db_type, connection:$connection )
+                                    }
+                                `;
+                                //console.log({ query, variables: { db_type: state.newDb?.type, connection: JSON.stringify(state.newDb?.connection) } });
+                                let res = await apolloClient.query({ query, variables: { db_type: state.newDb?.type, connection: JSON.stringify(state.newDb?.connection) } })
+                                console.log(res.data.check_database_connection);
+                                if (res.data.check_database_connection == "Ok")
+                                    Modal.success({ title: state.newDb?.connection.database, content: "connection Ok", centered: true });
+                                else
+                                    Modal.error({ title: state.newDb?.connection.database, content: res.data.check_database_connection, centered: true });
+
+                            }}
+                        >
+                            {t("check_connection")}
+                        </Button>
                     </Form.Item>
 
                 </Form>
