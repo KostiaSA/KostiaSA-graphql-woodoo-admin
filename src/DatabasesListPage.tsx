@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Fragment, useState, } from "react";
+import { Fragment, useState, useContext, } from "react";
 import { IDatabase, } from "../../voodoo-shared/ISchema";
 import { gql, useQuery, useMutation, useLazyQuery } from "@apollo/client";
 import { ConsoleSqlOutlined } from "@ant-design/icons";
@@ -23,7 +23,10 @@ import _ from "lodash";
 import { deepMerge } from './utils/deepMerge';
 import { getDatabaseApiPrefixRules, getDatabaseApiNameRules } from './validators/validators';
 import { DATABASE_TYPES, GET_DATABASE_DEFAULT_PORT } from './const';
-import { apolloClient } from "./apolloClient";
+import { apolloClient, doQuery } from "./apolloClient";
+import { AppStateContext } from "./App";
+import { appState } from "./AppState";
+import { useObserver } from "mobx-react-lite";
 
 const { Option } = Select;
 
@@ -41,6 +44,10 @@ export function DatabasesListPage() {
         databases
     }
 `;
+    //const appStateContext = useContext(AppStateContext);
+
+    //const [ui_disabled, set_ui_disabled] = useState<boolean>(false);
+
     const [state, setState] = useState<IState>({ dbEditorMode: "none" });
 
     const [databaseEditForm] = Form.useForm();
@@ -119,8 +126,6 @@ export function DatabasesListPage() {
         console.log("React.useEffect");
     });
 
-    if (loading) return <div>"Loading..."</div>;
-    if (error) return <div>`Error! ${error.message}`</div>;
 
     const groupHeaderFormItemLayout = {
         wrapperCol: {
@@ -135,196 +140,199 @@ export function DatabasesListPage() {
         },
     };
 
-    return (
+    return useObserver(() => {
 
-        <div style={{ maxWidth: 1200, margin: "20px 20px 0 20px" }}>
-            <Row>
-                <Col offset={0}><h2>{t("API_databases_list")}</h2></Col>
-            </Row>
-            <Table
-                dataSource={data?.databases}
-                rowKey="prefix"
-                size="small"
-                bordered
-                pagination={false}
-                title={() =>
-                    <div style={{ minHeight: 26 }}>
-                        <Button
-                            style={{ float: "right" }}
-                            size="small"
-                            onClick={startAddDatabaseAction}
-                            className={`form-title-color-add`}
-                        >
-                            {"+ " + t("add_new_database")}
-                        </Button>
-                    </div>}
-            >
-                <Column title={t("api_name")} dataIndex="name" key="name" className="database-text-color" />
-                <Column title={t("api_prefix")} dataIndex="prefix" key="prefix" className="database-text-color" />
-                <Column title={t("description")} dataIndex="description" key="description" className="database-text-color" /> }
+        if (loading) return <div>"Loading..."</div>;
+        if (error) return <div>`Error! ${error.message}`</div>;
+
+        return (
+            <div style={{ maxWidth: 1200, margin: "20px 20px 0 20px" }}>
+                <Row>
+                    <Col offset={0}><h2>{t("API_databases_list")}</h2></Col>
+                </Row>
+                <Table
+                    dataSource={data?.databases}
+                    rowKey="prefix"
+                    size="small"
+                    bordered
+                    pagination={false}
+                    title={() =>
+                        <div style={{ minHeight: 26 }}>
+                            <Button
+                                style={{ float: "right" }}
+                                size="small"
+                                onClick={startAddDatabaseAction}
+                                className={`form-title-color-add`}
+                            >
+                                {"+ " + t("add_new_database")}
+                            </Button>
+                        </div>}
+                >
+                    <Column title={t("api_name")} dataIndex="name" key="name" className="database-text-color" />
+                    <Column title={t("api_prefix")} dataIndex="prefix" key="prefix" className="database-text-color" />
+                    <Column title={t("description")} dataIndex="description" key="description" className="database-text-color" /> }
                 <Column title={t("server_type")} dataIndex="type" key="package.name" />
-                <Column
-                    title={t("server_host")}
-                    key="connection.host"
-                    render={(text, record: IDatabase, index) => <span>{record.connection.host}:{record.connection.port}</span>}
-                />
-                <Column title={t("database_name")} dataIndex={["connection", "database"]} key="connection.database" />
-                <Column title={t("login")} dataIndex={["connection", "username"]} key="connection.username" />
-                <Column title={<span style={{ float: "right" }}>{t("actions")}</span>} key="operation"
-                    render={(text, record: IDatabase, index) => {
-                        return (
-                            <Fragment>
-                                <Popconfirm
-                                    title={t("delete_database?", { name: record.name })}
-                                    okText={t("Yes")}
-                                    cancelText={t("No")}
-                                    onConfirm={async () => {
-                                        await deleteDatabaseAction(record.name);
-                                    }}>
-                                    <Button size="small" type="link" danger style={{ float: "right", cursor: "pointer" }}
-                                        className={`form-title-color-delete`}
-                                    >
-                                        {t("delete")}
-                                    </Button>
-                                </Popconfirm>
-                                <Button size="small" type="link" style={{ float: "right" }}
-                                    className={`form-title-color-edit`}
-                                    onClick={() => {
-                                        //console.log("start-edit-database, record=", record);
-                                        startEditDatabaseAction(record);
-                                    }}
-                                >{t("edit")}</Button>
-                            </Fragment>
-                        )
-                    }}
-                />
-            </Table>
+                    <Column
+                        title={t("server_host")}
+                        key="connection.host"
+                        render={(text, record: IDatabase, index) => <span>{record.connection.host}:{record.connection.port}</span>}
+                    />
+                    <Column title={t("database_name")} dataIndex={["connection", "database"]} key="connection.database" />
+                    <Column title={t("login")} dataIndex={["connection", "username"]} key="connection.username" />
+                    <Column title={<span style={{ float: "right" }}>{t("actions")}</span>} key="operation"
+                        render={(text, record: IDatabase, index) => {
+                            return (
+                                <Fragment>
+                                    <Popconfirm
+                                        title={t("delete_database?", { name: record.name })}
+                                        okText={t("Yes")}
+                                        cancelText={t("No")}
+                                        onConfirm={async () => {
+                                            await deleteDatabaseAction(record.name);
+                                        }}>
+                                        <Button size="small" type="link" danger style={{ float: "right", cursor: "pointer" }}
+                                            className={`form-title-color-delete`}
+                                        >
+                                            {t("delete")}
+                                        </Button>
+                                    </Popconfirm>
+                                    <Button size="small" type="link" style={{ float: "right" }}
+                                        className={`form-title-color-edit`}
+                                        onClick={() => {
+                                            //console.log("start-edit-database, record=", record);
+                                            startEditDatabaseAction(record);
+                                        }}
+                                    >{t("edit")}</Button>
+                                </Fragment>
+                            )
+                        }}
+                    />
+                </Table>
 
-            {/* // =============================================== DATABASE FORM =================================================
+                {/* // =============================================== DATABASE FORM =================================================
                 // =============================================== DATABASE FORM =================================================
                 // =============================================== DATABASE FORM =================================================
                 // =============================================== DATABASE FORM =================================================
                 // =============================================== DATABASE FORM =================================================  */}
-            <Modal
-                width={700}
-                visible={state.dbEditorMode != "none"}
-                title={<span className={`form-title-color-${state.dbEditorMode}`}>{state.dbEditorMode == "add" ? t("Adding_new_database") : t("Editing_database")}</span>}
-                destroyOnClose
-                footer={[
-                    <Button key="back" onClick={cancelDatabaseEditingAction}>
-                        {t("Cancel")}
-                    </Button>,
-                    <Button key="submit" type="primary" onClick={saveDatabaseAction} >
-                        {t("Save")}
-                    </Button>,
-                ]}
-            >
-                <Form
-
-                    labelCol={{ span: 7 }}
-                    wrapperCol={{ span: 15 }}
-                    layout="horizontal"
-                    size="small"
-                    form={databaseEditForm}
-                    onValuesChange={(changedFields: any, allFields: any) => {
-                        state.newDb = deepMerge(state.newDb, changedFields)
-                    }}
+                <Modal
+                    width={700}
+                    visible={state.dbEditorMode != "none"}
+                    title={<span className={`form-title-color-${state.dbEditorMode}`}>{state.dbEditorMode == "add" ? t("Adding_new_database") : t("Editing_database")}</span>}
+                    destroyOnClose
+                    footer={[
+                        <Button key="back" onClick={cancelDatabaseEditingAction} disabled={appState.ui_disabled}>
+                            {t("Cancel")}
+                        </Button>,
+                        <Button key="submit" type="primary" onClick={saveDatabaseAction} disabled={appState.ui_disabled}>
+                            {t("Save")}
+                        </Button>,
+                    ]}
                 >
-                    <Form.Item {...groupHeaderFormItemLayout}>
-                        <h3 className={`form-title-color-${state.dbEditorMode}`}>{t("API_GRAPHQL_info")}</h3>
-                    </Form.Item>
+                    <Form
 
-                    <Form.Item name="name" label={t("api_name")} rules={getDatabaseApiNameRules()}
-                    //    rules={getSchemaTableNameRules()}
+                        labelCol={{ span: 7 }}
+                        wrapperCol={{ span: 15 }}
+                        layout="horizontal"
+                        size="small"
+                        form={databaseEditForm}
+                        onValuesChange={(changedFields: any, allFields: any) => {
+                            state.newDb = deepMerge(state.newDb, changedFields)
+                        }}
                     >
-                        <Input autoComplete="off" style={{ maxWidth: 400 }} disabled={state.dbEditorMode == "edit"} />
-                    </Form.Item>
+                        <Form.Item {...groupHeaderFormItemLayout}>
+                            <h3 className={`form-title-color-${state.dbEditorMode}`}>{t("API_GRAPHQL_info")}</h3>
+                        </Form.Item>
 
-                    <Form.Item name="prefix" label={t("api_prefix")} rules={getDatabaseApiPrefixRules()}>
-                        <Input autoComplete="off" style={{ maxWidth: 150 }} />
-                    </Form.Item>
-
-                    <Form.Item name="description" label={t("description")}
-                        rules={[{ max: 255, message: t("max_length_exceeded", { name: t("description"), length: 255 }) }]}
-
-                    >
-                        <Input autoComplete="off" style={{ maxWidth: 400 }} />
-                    </Form.Item>
-
-                    <Form.Item {...groupHeaderFormItemLayout}>
-                        <h3 className={`form-title-color-${state.dbEditorMode}`}>{t("connection_options")}</h3>
-                    </Form.Item>
-
-                    <Form.Item name="type" label={t("server_type")} >
-                        <Select defaultValue="mssql" style={{ width: 120 }}>
-                            {DATABASE_TYPES.map((db) => <Option value={db} key={db} >{db}</Option>)}
-                        </Select>
-                    </Form.Item>
-
-                    <Form.Item
-                        name={["connection", "host"]}
-                        label={t("server_host")}
-                        rules={[
-                            {
-                                required: true,
-                                message: t("cannot_be_empty", { name: t("server_host") })
-                            },
-                            {
-                                max: 255,
-                                message: t("max_length_exceeded", { name: t("server_host"), length: 255 })
-                            },
-
-                        ]}
-                    >
-                        <Input autoComplete="off" style={{ maxWidth: 400 }} />
-                    </Form.Item>
-
-                    <Form.Item
-                        name={["connection", "port"]}
-                        label={t("server_port")}
-                        rules={[{ type: "integer", min: 0, max: 65535 }]}
-                    >
-                        <InputNumber max={65535} style={{ maxWidth: 120 }} />
-                    </Form.Item>
-
-                    <Form.Item name={["connection", "username"]} label={t("login")}>
-                        <Input autoComplete="off" style={{ maxWidth: 250 }} />
-                    </Form.Item>
-
-                    <Form.Item name={["connection", "password"]} label={t("password")} >
-                        <Input.Password autoComplete="off" style={{ maxWidth: 250 }} />
-                    </Form.Item>
-
-                    <Form.Item name={["connection", "database"]} label={t("database")}>
-                        <Input autoComplete="off" style={{ maxWidth: 400 }} />
-                    </Form.Item>
-
-                    <Form.Item {...groupHeaderFormItemLayout}>
-                        <Button size="middle" shape="round" icon={<ConsoleSqlOutlined />}
-                            onClick={async () => {
-                                let query = gql`
-                                    query ($db_type: String, $connection: JSON) {
-                                        check_database_connection(db_type: $db_type, connection:$connection )
-                                    }
-                                `;
-                                //console.log({ query, variables: { db_type: state.newDb?.type, connection: JSON.stringify(state.newDb?.connection) } });
-                                let res = await apolloClient.query({ query, variables: { db_type: state.newDb?.type, connection: JSON.stringify(state.newDb?.connection) } })
-                                console.log(res.data.check_database_connection);
-                                if (res.data.check_database_connection == "Ok")
-                                    Modal.success({ title: state.newDb?.connection.database, content: "connection Ok", centered: true });
-                                else
-                                    Modal.error({ title: state.newDb?.connection.database, content: res.data.check_database_connection, centered: true });
-
-                            }}
+                        <Form.Item name="name" label={t("api_name")} rules={getDatabaseApiNameRules()}
+                        //    rules={getSchemaTableNameRules()}
                         >
-                            {t("check_connection")}
-                        </Button>
-                    </Form.Item>
+                            <Input autoComplete="off" style={{ maxWidth: 400 }} disabled={state.dbEditorMode == "edit"} />
+                        </Form.Item>
 
-                </Form>
-            </Modal>
-        </div>
-    );
+                        <Form.Item name="prefix" label={t("api_prefix")} rules={getDatabaseApiPrefixRules()}>
+                            <Input autoComplete="off" style={{ maxWidth: 150 }} />
+                        </Form.Item>
+
+                        <Form.Item name="description" label={t("description")}
+                            rules={[{ max: 255, message: t("max_length_exceeded", { name: t("description"), length: 255 }) }]}
+
+                        >
+                            <Input autoComplete="off" style={{ maxWidth: 400 }} />
+                        </Form.Item>
+
+                        <Form.Item {...groupHeaderFormItemLayout}>
+                            <h3 className={`form-title-color-${state.dbEditorMode}`}>{t("connection_options")}</h3>
+                        </Form.Item>
+
+                        <Form.Item name="type" label={t("server_type")} >
+                            <Select defaultValue="mssql" style={{ width: 120 }}>
+                                {DATABASE_TYPES.map((db) => <Option value={db} key={db} >{db}</Option>)}
+                            </Select>
+                        </Form.Item>
+
+                        <Form.Item
+                            name={["connection", "host"]}
+                            label={t("server_host")}
+                            rules={[
+                                {
+                                    required: true,
+                                    message: t("cannot_be_empty", { name: t("server_host") })
+                                },
+                                {
+                                    max: 255,
+                                    message: t("max_length_exceeded", { name: t("server_host"), length: 255 })
+                                },
+
+                            ]}
+                        >
+                            <Input autoComplete="off" style={{ maxWidth: 400 }} />
+                        </Form.Item>
+
+                        <Form.Item
+                            name={["connection", "port"]}
+                            label={t("server_port")}
+                            rules={[{ type: "integer", min: 0, max: 65535 }]}
+                        >
+                            <InputNumber max={65535} style={{ maxWidth: 120 }} />
+                        </Form.Item>
+
+                        <Form.Item name={["connection", "username"]} label={t("login")}>
+                            <Input autoComplete="off" style={{ maxWidth: 250 }} />
+                        </Form.Item>
+
+                        <Form.Item name={["connection", "password"]} label={t("password")} >
+                            <Input.Password autoComplete="off" style={{ maxWidth: 250 }} />
+                        </Form.Item>
+
+                        <Form.Item name={["connection", "database"]} label={t("database")}>
+                            <Input autoComplete="off" style={{ maxWidth: 400 }} />
+                        </Form.Item>
+
+                        <Form.Item {...groupHeaderFormItemLayout}>
+                            <Button size="middle" shape="round" icon={<ConsoleSqlOutlined />} disabled={appState.ui_disabled}
+                                onClick={async () => {
+                                    let query = gql`
+                                        query ($db_type: String, $connection: JSON) {
+                                            check_database_connection(db_type: $db_type, connection:$connection )
+                                        }
+                                    `;
+                                    let res = await doQuery(query, { db_type: state.newDb?.type, connection: JSON.stringify(state.newDb?.connection) });
+                                    if (res.check_database_connection == "Ok")
+                                        Modal.success({ title: state.newDb?.connection.database, content: "connection Ok", centered: true });
+                                    else
+                                        Modal.error({ title: state.newDb?.connection.database, content: res.check_database_connection, centered: true });
+                                }}
+                            >
+                                {t("check_connection")}
+                            </Button>
+                        </Form.Item>
+
+                    </Form>
+                </Modal>
+            </div>
+
+        )
+    });
 
 
 }
