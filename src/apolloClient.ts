@@ -1,9 +1,22 @@
-import { ApolloClient, InMemoryCache, HttpLink, DocumentNode } from '@apollo/client';
+import { ApolloClient, InMemoryCache, HttpLink, DocumentNode, DefaultOptions } from '@apollo/client';
 import { appState } from './AppState';
 import { Modal } from 'antd';
 
+
+const defaultOptions: DefaultOptions = {
+    watchQuery: {
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'ignore',
+    },
+    query: {
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all',
+    },
+}
+
 export const apolloClient = new ApolloClient({
     cache: new InMemoryCache(),
+    defaultOptions: defaultOptions,
     link: new HttpLink({
         uri: `${window.location.protocol}//${window.location.hostname}:${Number.parseInt(window.location.port) + 1}`,
     })
