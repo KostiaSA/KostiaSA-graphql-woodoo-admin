@@ -187,9 +187,9 @@ export function DatabasesListPage() {
                     <Column title={t("state")} dataIndex="state" key="state"
                         render={(text: string, record: IDatabase) => {
                             if (dbState[record.name] == t("connected"))
-                                return <span style={{ color: "green" }}>{dbState[record.name]}</span>
+                                return <span style={{ color: "#52c41a" }}>{dbState[record.name]}</span>
                             else if (dbState[record.name] == t("error"))
-                                return <span style={{ color: "red" }}>{dbState[record.name]}</span>
+                                return <span style={{ color: "#f5222d" }}>{dbState[record.name]}</span>
                             else
                                 return <span style={{ color: "gray" }}>{dbState[record.name]}</span>
                         }}
@@ -344,7 +344,7 @@ export function DatabasesListPage() {
                                     `;
                                     let res = await doQuery(query, { db_type: state.newDb?.type, connection: JSON.stringify(state.newDb?.connection) });
                                     if (res.check_database_connection == "Ok")
-                                        Modal.success({ title: state.newDb?.connection.database, content: "connection Ok", centered: true });
+                                        Modal.success({ title: state.newDb?.connection.database, content: t("connection Ok"), centered: true });
                                     else
                                         Modal.error({ title: state.newDb?.connection.database, content: res.check_database_connection, centered: true });
                                 }}

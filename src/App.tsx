@@ -78,7 +78,7 @@ export default function App() {
                     lineHeight: "initial"
                   }
                 } >
-                  Graphgl-Voodoo Admin <span style={{ margin: 5, color: "grey" }} > ver 0.1b</span>
+                  GraphQL-Voodoo Admin <span style={{ margin: 5, color: "grey" }} > ver 0.1b</span>
                 </div>
 
                 <div style={
