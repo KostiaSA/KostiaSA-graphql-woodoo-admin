@@ -1,6 +1,6 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import { appState, getDefaultAppState } from './AppState';
+import { getDefaultAppState } from './AppState';
 
 
 //import enEN from 'antd/es/locale/en_EN';
@@ -109,6 +109,7 @@ const resources = {
             "error": "ошибка",
             "checking...": "проверка...",
             "connection Ok": "подключение Ok",
+            "first_correct_the_errors": "сначала исправьте ошибки",
 
             // validation rules
             "bad_identifier": "{{name}} может содержать только латин. буквы, цифры, _ и начинаться с буквы или _",
@@ -124,6 +125,7 @@ const resources = {
             "connection_options": "параметры подключения",
             "check_connection": "проверка подключения",
             "delete_database?": "удалить базу даных '{{name}}' и все ее настройки?",
+            "db_already_exists": "уже есть база данных с именем '{{name}}'",
 
         }
     },
@@ -156,6 +158,7 @@ const resources = {
             "error": "error",
             "checking...": "checking...",
             "connection Ok": "connection Ok",
+            "first_correct_the_errors": "first correct the errors",
 
             // validation rules
             "bad_identifier": "{{name}} can only contain latin. letters, numbers, underscore and begin with a letter or underscore",
@@ -172,6 +175,7 @@ const resources = {
             "connection_options": "connection options",
             "check_connection": "check connection",
             "delete_database?": "delete database '{{name}}' and all its settings?",
+            "db_already_exists": "database '{{name}}' already exists",
 
         }
     }

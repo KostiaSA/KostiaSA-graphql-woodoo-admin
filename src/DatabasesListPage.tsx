@@ -27,6 +27,7 @@ import { apolloClient, doQuery } from "./apolloClient";
 import { AppStateContext } from "./App";
 import { appState } from "./AppState";
 import { useObserver } from "mobx-react-lite";
+import { isFormValidatedOk } from "./utils/isFormValidatedOk";
 
 const { Option } = Select;
 
@@ -92,18 +93,24 @@ export function DatabasesListPage() {
     }
 
     const saveDatabaseAction = async () => {
-        await saveDatabase({ variables: { db: JSON.stringify(state.newDb) } });
-        await refetch();
-        setState({ ...state, dbEditorMode: "none" });
-        setDbState({});
-        console.log("database saved !!!");
+        if (await isFormValidatedOk(databaseEditForm)) {
+            await saveDatabase({ variables: { db: JSON.stringify(state.newDb) } });
+            await refetch();
+            setState({ ...state, dbEditorMode: "none" });
+            setDbState({});
+            //console.log("database saved !!!");
+        }
+        else {
+            Modal.error({ title: t("first_correct_the_errors"), centered: true });
+        }
+
     }
 
     const deleteDatabaseAction = async (db_name: string) => {
         await deleteDatabase({ variables: { db_name: db_name } });
         await refetch();
         setDbState({});
-        console.log("database deleted !!!");
+        //console.log("database deleted !!!");
     }
 
     const cancelDatabaseEditingAction = () => {
@@ -149,7 +156,7 @@ export function DatabasesListPage() {
                                         }
                                     `;
                         let res = await doQuery(query, { db_type: db.type, connection: JSON.stringify(db.connection) });
-                        if (res.check_database_connection == "Ok")
+                        if (res.check_database_connection === "Ok")
                             dbState[db.name] = t("connected");
                         else
                             dbState[db.name] = t("error");
@@ -186,9 +193,9 @@ export function DatabasesListPage() {
                 >
                     <Column title={t("state")} dataIndex="state" key="state"
                         render={(text: string, record: IDatabase) => {
-                            if (dbState[record.name] == t("connected"))
+                            if (dbState[record.name] === t("connected"))
                                 return <span style={{ color: "#52c41a" }}>{dbState[record.name]}</span>
-                            else if (dbState[record.name] == t("error"))
+                            else if (dbState[record.name] === t("error"))
                                 return <span style={{ color: "#f5222d" }}>{dbState[record.name]}</span>
                             else
                                 return <span style={{ color: "gray" }}>{dbState[record.name]}</span>
@@ -242,8 +249,8 @@ export function DatabasesListPage() {
                 // =============================================== DATABASE FORM =================================================  */}
                 <Modal
                     width={700}
-                    visible={state.dbEditorMode != "none"}
-                    title={<span className={`form-title-color-${state.dbEditorMode}`}>{state.dbEditorMode == "add" ? t("Adding_new_database") : t("Editing_database")}</span>}
+                    visible={state.dbEditorMode !== "none"}
+                    title={<span className={`form-title-color-${state.dbEditorMode}`}>{state.dbEditorMode === "add" ? t("Adding_new_database") : t("Editing_database")}</span>}
                     destroyOnClose
                     footer={[
                         <Button key="back" onClick={cancelDatabaseEditingAction} disabled={appState.ui_disabled}>
@@ -269,10 +276,10 @@ export function DatabasesListPage() {
                             <h3 className={`form-title-color-${state.dbEditorMode}`}>{t("API_GRAPHQL_info")}</h3>
                         </Form.Item>
 
-                        <Form.Item name="name" label={t("api_name")} rules={getDatabaseApiNameRules()}
+                        <Form.Item name="name" label={t("api_name")} rules={getDatabaseApiNameRules(state.dbEditorMode === "add")}
                         //    rules={getSchemaTableNameRules()}
                         >
-                            <Input autoComplete="off" style={{ maxWidth: 400 }} disabled={state.dbEditorMode == "edit"} />
+                            <Input autoComplete="off" style={{ maxWidth: 400 }} disabled={state.dbEditorMode === "edit"} />
                         </Form.Item>
 
                         <Form.Item name="prefix" label={t("api_prefix")} rules={getDatabaseApiPrefixRules()}>
@@ -343,7 +350,7 @@ export function DatabasesListPage() {
                                         }
                                     `;
                                     let res = await doQuery(query, { db_type: state.newDb?.type, connection: JSON.stringify(state.newDb?.connection) });
-                                    if (res.check_database_connection == "Ok")
+                                    if (res.check_database_connection === "Ok")
                                         Modal.success({ title: state.newDb?.connection.database, content: t("connection Ok"), centered: true });
                                     else
                                         Modal.error({ title: state.newDb?.connection.database, content: res.check_database_connection, centered: true });
