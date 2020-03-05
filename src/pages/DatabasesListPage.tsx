@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Fragment, useState, useContext, } from "react";
-import { IDatabase, } from "../../voodoo-shared/ISchema";
+import { IDatabase, } from "../../../voodoo-shared/ISchema";
 import { gql, useQuery, useMutation, useLazyQuery } from "@apollo/client";
 import { ConsoleSqlOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
@@ -20,14 +20,15 @@ import {
 
 import Column from "antd/lib/table/Column";
 import _ from "lodash";
-import { deepMerge } from './utils/deepMerge';
-import { getDatabaseApiPrefixRules, getDatabaseApiNameRules } from './validators/validators';
-import { DATABASE_TYPES, GET_DATABASE_DEFAULT_PORT } from './const';
-import { apolloClient, doQuery } from "./apolloClient";
-import { AppStateContext } from "./App";
-import { appState } from "./AppState";
+import { deepMerge } from '../utils/deepMerge';
+import { getDatabaseApiPrefixRules, getDatabaseApiNameRules } from '../validators/validators';
+import { DATABASE_TYPES, GET_DATABASE_DEFAULT_PORT } from '../const';
+import { apolloClient, doQuery } from "../apolloClient";
+import { AppStateContext } from "../App";
+import { appState } from "../AppState";
 import { useObserver } from "mobx-react-lite";
-import { isFormValidatedOk } from "./utils/isFormValidatedOk";
+import { isFormValidatedOk } from "../utils/isFormValidatedOk";
+import { useHistory } from "react-router-dom";
 
 const { Option } = Select;
 
@@ -45,6 +46,7 @@ export function DatabasesListPage() {
         }
     `;
 
+    const history = useHistory();
     const [state, setState] = useState<IState>({ dbEditorMode: "none" });
 
     const [databaseEditForm] = Form.useForm();
@@ -235,18 +237,40 @@ export function DatabasesListPage() {
                                             //console.log("start-edit-database, record=", record);
                                             startEditDatabaseAction(record);
                                         }}
-                                    >{t("edit")}</Button>
+                                    >{t("edit")}
+                                    </Button>
+                                    <Button size="small" type="link" style={{ float: "right" }} disabled={dbState[record.name] !== t("connected")}
+                                        // className={`form-title-color-add`}
+                                        onClick={() => {
+                                            history.push("/database-api/" + encodeURIComponent(record.name));
+                                        }}
+                                    >{t("api_setup")}
+                                    </Button>
+
                                 </Fragment>
                             )
                         }}
                     />
+                    {/* <Column title={<span style={{ float: "right" }}>{t("api_setup")}</span>} key="api_setup"
+                        render={(text, record: IDatabase, index) => {
+                            return (
+                                <Button size="small" type="link" style={{ float: "right" }}
+                                    className={`form-title-color-add`}
+                                    onClick={() => {
+                                        //console.log("start-edit-database, record=", record);
+                                        startEditDatabaseAction(record);
+                                    }}
+                                >{t("api_setup")}</Button>
+                            )
+                        }}
+                    /> */}
                 </Table>
 
-                {/* // =============================================== DATABASE FORM =================================================
-                // =============================================== DATABASE FORM =================================================
-                // =============================================== DATABASE FORM =================================================
-                // =============================================== DATABASE FORM =================================================
-                // =============================================== DATABASE FORM =================================================  */}
+                {/*=============================================== DATABASE FORM =================================================
+                   =============================================== DATABASE FORM =================================================
+                   =============================================== DATABASE FORM =================================================
+                   =============================================== DATABASE FORM =================================================
+                   =============================================== DATABASE FORM =================================================  */}
                 <Modal
                     width={700}
                     visible={state.dbEditorMode !== "none"}

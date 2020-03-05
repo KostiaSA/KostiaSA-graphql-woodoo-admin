@@ -126,6 +126,7 @@ const resources = {
             "check_connection": "проверка подключения",
             "delete_database?": "удалить базу даных '{{name}}' и все ее настройки?",
             "db_already_exists": "уже есть база данных с именем '{{name}}'",
+            "api_setup": "настр. API",
 
         }
     },
@@ -176,7 +177,7 @@ const resources = {
             "check_connection": "check connection",
             "delete_database?": "delete database '{{name}}' and all its settings?",
             "db_already_exists": "database '{{name}}' already exists",
-
+            "api_setup": "API setup",
         }
     }
 };

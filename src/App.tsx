@@ -1,11 +1,7 @@
 import * as React from "react";
-import logo from './logo.svg';
 import Button from 'antd/es/button';
-//import './App.css';
-//import Layout from 'antd/es/layout';
-import { Menu, Layout, Select, Popover, Divider, ConfigProvider, Modal } from 'antd';
-import { Component, useState, useEffect } from 'react';
-import SubMenu from "antd/lib/menu/SubMenu";
+import { Menu, Layout, Popover, ConfigProvider } from 'antd';
+import { useState } from 'react';
 
 import {
   BrowserRouter as Router,
@@ -16,13 +12,14 @@ import {
 
 
 import { ApolloProvider } from '@apollo/client';
-import { DatabasesListPage } from "./DatabasesListPage";
+import { DatabasesListPage } from "./pages/DatabasesListPage";
 import i18n, { i18_langs } from './i18n';
 import { appState, IAppState, storeAppState, getDefaultAppState, initAppState } from './AppState';
 import { getAntdLocale, getAntdValidatorMessages } from './i18n';
 import { useLocalStore, useObserver } from "mobx-react-lite"
 import { apolloClient } from "./apolloClient";
 import { AppErrorBoundary } from "./AppErrorBoundary";
+import { DatabaseApiPage } from "./pages/DatabaseApiPage";
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -98,7 +95,7 @@ export default function App() {
                     onVisibleChange={(visible) => setIsSelectLangPopoverVisible(visible)}
                     content={i18_langs.map((lang) => {
                       return (
-                        <div>
+                        <div key={lang}>
                           <Button size="small" type="link" onClick={() => {
                             appState.lang = lang;
                             storeAppState();
@@ -170,6 +167,9 @@ export default function App() {
                   <Switch>
                     <Route path="/databases">
                       <DatabasesListPage></DatabasesListPage>
+                    </Route>
+                    <Route path="/database-api/:db_name">
+                      <DatabaseApiPage></DatabaseApiPage>
                     </Route>
                     <Route path="/tables">
                       <div>tables</div>
