@@ -128,6 +128,9 @@ const resources = {
             "db_already_exists": "уже есть база данных с именем '{{name}}'",
             "api_setup": "настр. API",
 
+            // DatabaseApiPage
+            "Database_API": "API базы данных",
+            "Tables": "Таблицы",
         }
     },
 
@@ -178,6 +181,10 @@ const resources = {
             "delete_database?": "delete database '{{name}}' and all its settings?",
             "db_already_exists": "database '{{name}}' already exists",
             "api_setup": "API setup",
+
+            // DatabaseApiPage
+            "Database_API": "Database API",
+            "Tables": "Tables",
         }
     }
 };
