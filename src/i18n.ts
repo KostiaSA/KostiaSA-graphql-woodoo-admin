@@ -132,6 +132,7 @@ const resources = {
             "Database_API": "API базы данных",
             "Tables": "Таблицы",
             "api_on_off": "API вкл/выкл",
+            "only_api_on": "Только вкл. API",
         }
     },
 
@@ -187,6 +188,7 @@ const resources = {
             "Database_API": "Database API",
             "Tables": "Tables",
             "api_on_off": "API on/off",
+            "only_api_on": "Only active API",
         }
     }
 };

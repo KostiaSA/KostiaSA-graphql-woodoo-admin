@@ -2,7 +2,7 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useObserver } from "mobx-react-lite";
 import { useParams } from "react-router-dom";
-import { Tabs, Table, Popconfirm, Button, Checkbox } from "antd";
+import { Tabs, Table, Popconfirm, Button, Checkbox, Form, Switch } from "antd";
 import { gql, useQuery } from "@apollo/client";
 import Column from "antd/lib/table/Column";
 import { IDatabase, ITable } from "../../../voodoo-shared/ISchema";
@@ -50,6 +50,17 @@ export function DatabaseApiPage() {
             return !!table.disabled;
     }
 
+    const [filterOnlyOn, setFilterOnlyOn] = React.useState<boolean>(false);
+
+    let database_native_tables_filtered: NativeTableRecord[] = [];
+    if (query_result.data) {
+        database_native_tables_filtered = query_result.data?.database_native_tables.filter((item: NativeTableRecord) => {
+            let res = true;
+            if (filterOnlyOn && isTable_off(item.schema_name, item.table_name))
+                res = false;
+            return res;
+        });
+    }
 
     return useObserver(() => {
 
@@ -58,8 +69,17 @@ export function DatabaseApiPage() {
                 <h2>{t("Database_API")}: {db_name}</h2>
                 <Tabs defaultActiveKey="1" animated={false}>
                     <TabPane tab={t("Tables")} key="tables" >
+                        <Form
+                            layout="inline"
+                            className="components-table-demo-control-bar"
+                            style={{ marginBottom: 16 }}
+                        >
+                            <Form.Item label={t("only_api_on")}>
+                                <Switch size="small" checked={filterOnlyOn} onChange={(enable) => setFilterOnlyOn(enable)} />
+                            </Form.Item>
+                        </Form>
                         <Table
-                            dataSource={query_result.data?.database_native_tables}
+                            dataSource={database_native_tables_filtered}
                             rowKey="prefix"
                             size="small"
                             bordered
