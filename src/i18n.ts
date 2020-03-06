@@ -132,7 +132,9 @@ const resources = {
             "Database_API": "API базы данных",
             "Tables": "Таблицы",
             "api_on_off": "API вкл/выкл",
-            "only_api_on": "Только активные API",
+            "only_api_on": "только активные API",
+            "search_by_name": "фильтр",
+            "input_search_text": "введите текст для поиска",
         }
     },
 
@@ -188,7 +190,9 @@ const resources = {
             "Database_API": "Database API",
             "Tables": "Tables",
             "api_on_off": "API on/off",
-            "only_api_on": "Only active API",
+            "only_api_on": "only active API",
+            "search_by_name": "filter",
+            "input_search_text": "input search text",
         }
     }
 };

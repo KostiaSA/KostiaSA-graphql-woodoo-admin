@@ -2,11 +2,12 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useObserver } from "mobx-react-lite";
 import { useParams } from "react-router-dom";
-import { Tabs, Table, Popconfirm, Button, Checkbox, Form, Switch } from "antd";
+import { Tabs, Table, Popconfirm, Button, Checkbox, Form, Switch, Input } from "antd";
 import { gql, useQuery } from "@apollo/client";
 import Column from "antd/lib/table/Column";
 import { IDatabase, ITable } from "../../../voodoo-shared/ISchema";
 import { Fragment } from 'react';
+import Search from "antd/lib/input/Search";
 
 const { TabPane } = Tabs;
 
@@ -51,14 +52,25 @@ export function DatabaseApiPage() {
     }
 
     // ********* FILTERS *************
-    const [filterOnlyOn, setFilterOnlyOn] = React.useState<boolean>(false);
+    const [filterOnlyActive, setFilterOnlyActive] = React.useState<boolean>(false);
+    const [filterByName, setFilterByName] = React.useState<string>("");
 
     let database_native_tables_filtered: NativeTableRecord[] = [];
     if (query_result.data) {
-        database_native_tables_filtered = query_result.data?.database_native_tables.filter((item: NativeTableRecord) => {
+        let filterByName_lowered = (filterByName || "").toLowerCase();
+        database_native_tables_filtered = query_result.data?.database_native_tables.filter((native_table: NativeTableRecord) => {
             let res = true;
-            if (filterOnlyOn && isTable_off(item.schema_name, item.table_name))
+            if (filterOnlyActive && isTable_off(native_table.schema_name, native_table.table_name))
                 res = false;
+            if (typeof filterByName == "string" && filterByName !== "") {
+                let table = getTableBySchemaAndName(native_table.schema_name, native_table.table_name);
+                let conditon_1 = native_table.table_name.toLowerCase().indexOf(filterByName_lowered) > -1;
+                let conditon_2 = table && table.name.toLowerCase().indexOf(filterByName_lowered) > -1;
+                if (!conditon_1 && !conditon_2) {
+                    res = false;
+                }
+
+            }
             return res;
         });
     }
@@ -88,8 +100,17 @@ export function DatabaseApiPage() {
                             className="components-table-demo-control-bar"
                             style={{ marginBottom: 16 }}
                         >
+                            <Form.Item label={t("search_by_name")}>
+                                <Search
+                                    allowClear
+                                    size="small"
+                                    placeholder={t("input_search_text")}
+                                    onSearch={(value: string) => setFilterByName(value)}
+                                    style={{ width: 250 }}
+                                />
+                            </Form.Item>
                             <Form.Item label={t("only_api_on")}>
-                                <Switch size="small" checked={filterOnlyOn} onChange={(enable) => setFilterOnlyOn(enable)} />
+                                <Switch size="small" checked={filterOnlyActive} onChange={(enable) => setFilterOnlyActive(enable)} />
                             </Form.Item>
                         </Form>
                         <Table
