@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom";
 import { Tabs, Table, Popconfirm, Button, Checkbox } from "antd";
 import { gql, useQuery } from "@apollo/client";
 import Column from "antd/lib/table/Column";
-import { IDatabase } from "../../../voodoo-shared/ISchema";
+import { IDatabase, ITable } from "../../../voodoo-shared/ISchema";
 import { Fragment } from 'react';
 
 const { TabPane } = Tabs;
@@ -20,11 +20,35 @@ export function DatabaseApiPage() {
 
     let query = gql`
     query ($db_name: String) {
-        database_native_tables(db_name:$db_name)
         database(db_name:$db_name)
+        database_native_tables(db_name:$db_name)
+        database_tables(db_name:$db_name)
     }`;
 
-    const query_result = useQuery<{ database_native_tables: NativeTableRecord[], database: IDatabase }>(query, { variables: { db_name } });
+    const query_result = useQuery<{ database_native_tables: NativeTableRecord[], database: IDatabase, database_tables: ITable[] }>(query, { variables: { db_name } });
+
+    let tablesByName: { [name: string]: ITable } = {};
+
+    if (query_result.data) {
+        for (let table of query_result.data?.database_tables) {
+            let key = table.dbo + ":" + table.name;
+            tablesByName[key] = table;
+        }
+    }
+    console.log("tablesByName", tablesByName);
+
+    let getTableBySchemaAndName = (schema: string, name: string): ITable => {
+        let key = schema + ":" + name;
+        return tablesByName[key];
+    }
+
+    let isTable_off = (schema: string, name: string): boolean => {
+        let table = getTableBySchemaAndName(schema, name);
+        if (!table)
+            return true;
+        else
+            return !!table.disabled;
+    }
 
 
     return useObserver(() => {
@@ -65,53 +89,59 @@ export function DatabaseApiPage() {
                                     return record.schema_name + "." + record.table_name;
                                 }}
                             />
-                            <Column title={<span>{t("api_on_off")}</span>} key="api_on_off"
-                                render={(text, record: IDatabase, index) => {
+                            <Column title={<span>{t("api_on_off")}</span>} key="api_on_off" align="center"
+                                render={(text, record: NativeTableRecord, index) => {
                                     return (
-                                        <Checkbox ></Checkbox>
+                                        <Checkbox checked={!isTable_off(record.schema_name, record.table_name)} ></Checkbox>
                                     )
                                 }}
                             />
                             <Column title={t("api")} dataIndex="api_name" key="api_name" className="database-text-color"
                                 render={(text: string, record: NativeTableRecord) => {
-                                    return query_result.data?.database.prefix + "_" + record.schema_name + "_" + record.table_name;
+                                    if (!isTable_off(record.schema_name, record.table_name))
+                                        return query_result.data?.database.prefix + "_" + record.schema_name + "_" + record.table_name;
+                                    else
+                                        return "";
                                 }}
                             />
                             <Column title={<span style={{ float: "right" }}>{t("actions")}</span>} key="operation"
-                                render={(text, record: IDatabase, index) => {
-                                    return (
-                                        <Fragment>
-                                            <Popconfirm
-                                                title={t("delete_database?", { name: record.name })}
-                                                okText={t("Yes")}
-                                                cancelText={t("No")}
-                                                onConfirm={async () => {
-                                                    //await deleteDatabaseAction(record.name);
-                                                }}>
-                                                <Button size="small" type="link" danger style={{ float: "right", cursor: "pointer" }}
-                                                    className={`form-title-color-delete`}
-                                                >
-                                                    {t("delete")}
+                                render={(text, record: NativeTableRecord, index) => {
+                                    if (!isTable_off(record.schema_name, record.table_name))
+                                        return (
+                                            <Fragment>
+                                                <Popconfirm
+                                                    title={t("delete_database?", { name: record.table_name })}
+                                                    okText={t("Yes")}
+                                                    cancelText={t("No")}
+                                                    onConfirm={async () => {
+                                                        //await deleteDatabaseAction(record.name);
+                                                    }}>
+                                                    <Button size="small" type="link" danger style={{ float: "right", cursor: "pointer" }}
+                                                        className={`form-title-color-delete`}
+                                                    >
+                                                        {t("delete")}
+                                                    </Button>
+                                                </Popconfirm>
+                                                <Button size="small" type="link" style={{ float: "right" }}
+                                                    className={`form-title-color-edit`}
+                                                    onClick={() => {
+                                                        //console.log("start-edit-database, record=", record);
+                                                        //startEditDatabaseAction(record);
+                                                    }}
+                                                >{t("edit")}
                                                 </Button>
-                                            </Popconfirm>
-                                            <Button size="small" type="link" style={{ float: "right" }}
-                                                className={`form-title-color-edit`}
-                                                onClick={() => {
-                                                    //console.log("start-edit-database, record=", record);
-                                                    //startEditDatabaseAction(record);
-                                                }}
-                                            >{t("edit")}
-                                            </Button>
-                                            <Button size="small" type="link" style={{ float: "right" }}
-                                                // className={`form-title-color-add`}
-                                                onClick={() => {
-                                                    //history.push("/database-api/" + encodeURIComponent(record.name));
-                                                }}
-                                            >{t("api_setup")}
-                                            </Button>
+                                                <Button size="small" type="link" style={{ float: "right" }}
+                                                    // className={`form-title-color-add`}
+                                                    onClick={() => {
+                                                        //history.push("/database-api/" + encodeURIComponent(record.name));
+                                                    }}
+                                                >{t("api_setup")}
+                                                </Button>
 
-                                        </Fragment>
-                                    )
+                                            </Fragment>
+                                        )
+                                    else
+                                        return null;
                                 }}
                             />
 

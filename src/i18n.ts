@@ -131,6 +131,7 @@ const resources = {
             // DatabaseApiPage
             "Database_API": "API базы данных",
             "Tables": "Таблицы",
+            "api_on_off": "API вкл/выкл",
         }
     },
 
@@ -185,6 +186,7 @@ const resources = {
             // DatabaseApiPage
             "Database_API": "Database API",
             "Tables": "Tables",
+            "api_on_off": "API on/off",
         }
     }
 };
