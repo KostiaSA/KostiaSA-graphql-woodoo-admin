@@ -8,6 +8,7 @@ import Column from "antd/lib/table/Column";
 import { IDatabase, ITable } from "../../../voodoo-shared/ISchema";
 import { Fragment } from 'react';
 import Search from "antd/lib/input/Search";
+import Highlighter from "react-highlight-words";
 
 const { TabPane } = Tabs;
 
@@ -141,7 +142,14 @@ export function DatabaseApiPage() {
 
                             <Column title={t("table")} dataIndex="table_name" key="table" className="database-text-color"
                                 render={(text: string, record: NativeTableRecord) => {
-                                    return record.schema_name + "." + record.table_name;
+                                    return (
+                                        <Highlighter
+                                            highlightClassName="highlight-text"
+                                            searchWords={[filterByName]}
+                                            autoEscape={true}
+                                            textToHighlight={record.schema_name + "." + record.table_name}
+                                        />
+                                    )
                                 }}
                             />
                             <Column title={<span>{t("api_on_off")}</span>} key="api_on_off" align="center"
@@ -153,8 +161,17 @@ export function DatabaseApiPage() {
                             />
                             <Column title={t("api")} dataIndex="api_name" key="api_name" className="database-text-color"
                                 render={(text: string, record: NativeTableRecord) => {
-                                    if (!isTable_off(record.schema_name, record.table_name))
-                                        return query_result.data?.database.prefix + "_" + record.schema_name + "_" + record.table_name;
+                                    if (!isTable_off(record.schema_name, record.table_name)) {
+                                        return (
+                                            <Highlighter
+                                                highlightClassName="highlight-text"
+                                                searchWords={[filterByName]}
+                                                autoEscape={true}
+                                                textToHighlight={query_result.data?.database.prefix + "_" + record.schema_name + "_" + record.table_name}
+                                            />
+                                        )
+                                        //return query_result.data?.database.prefix + "_" + record.schema_name + "_" + record.table_name;
+                                    }
                                     else
                                         return "";
                                 }}
