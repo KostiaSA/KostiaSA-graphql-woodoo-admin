@@ -23,7 +23,7 @@ import _ from "lodash";
 import { deepMerge } from '../utils/deepMerge';
 import { getDatabaseApiPrefixRules, getDatabaseApiNameRules } from '../validators/validators';
 import { DATABASE_TYPES, GET_DATABASE_DEFAULT_PORT } from '../const';
-import { apolloClient, doQuery } from "../apolloClient";
+import { apolloClient, apolloExecute } from "../apolloClient";
 import { AppStateContext } from "../App";
 import { appState } from "../AppState";
 import { useObserver } from "mobx-react-lite";
@@ -52,12 +52,12 @@ export function DatabasesListPage() {
     const [databaseEditForm] = Form.useForm();
     const { loading, error, data, refetch } = useQuery<{ databases: IDatabase[] }>(query);
 
-    const SAVE_DATABASE = gql`
-        mutation ($db: JSON!) {
-            save_database(database: $db)
-        }
-    `;
-    const [saveDatabase] = useMutation(SAVE_DATABASE);
+    // const SAVE_DATABASE = gql`
+    //     mutation ($db: JSON!) {
+    //         save_database(database: $db)
+    //     }
+    // `;
+    // const [saveDatabase] = useMutation(SAVE_DATABASE);
 
     const DELETE_DATABASE = gql`
         mutation ($db_name: String) {
@@ -72,6 +72,7 @@ export function DatabasesListPage() {
             prefix: "sql1",
             type: "SQL Server",
             description: "",
+            version: 1,
             connection: {
                 host: "localhost",
                 port: GET_DATABASE_DEFAULT_PORT("SQL Server"),
@@ -86,17 +87,30 @@ export function DatabasesListPage() {
         }, 1);
     }
 
-    const startEditDatabaseAction = (db: IDatabase) => {
-        setState({ ...state, dbEditorMode: "edit", newDb: db });
+    const startEditDatabaseAction = async (db: IDatabase) => {
+        // reload record
+        let query = gql`
+            query ($db_name: String) {
+                database(db_name:$db_name)
+        }`;
+        let editedDb = (await apolloExecute(query, { db_name: db.name })).database;
+
+        setState({ ...state, dbEditorMode: "edit", newDb: editedDb });
         setTimeout(() => {
-            databaseEditForm.setFieldsValue(db);
+            databaseEditForm.setFieldsValue(editedDb);
         }, 1);
 
     }
 
     const saveDatabaseAction = async () => {
         if (await isFormValidatedOk(databaseEditForm)) {
-            await saveDatabase({ variables: { db: JSON.stringify(state.newDb) } });
+            let query = gql`
+                mutation ($db: JSON!) {
+                    save_database(database: $db)
+                }
+            `;
+            await apolloExecute(query, { db: JSON.stringify(state.newDb) })
+            //await saveDatabase({ variables: { db: JSON.stringify(state.newDb) } });
             await refetch();
             setState({ ...state, dbEditorMode: "none" });
             setDbState({});
@@ -157,7 +171,7 @@ export function DatabasesListPage() {
                                             check_database_connection(db_type: $db_type, connection:$connection )
                                         }
                                     `;
-                        let res = await doQuery(query, { db_type: db.type, connection: JSON.stringify(db.connection) });
+                        let res = await apolloExecute(query, { db_type: db.type, connection: JSON.stringify(db.connection) });
                         if (res.check_database_connection === "Ok")
                             dbState[db.name] = t("connected");
                         else
@@ -373,7 +387,7 @@ export function DatabasesListPage() {
                                             check_database_connection(db_type: $db_type, connection:$connection )
                                         }
                                     `;
-                                    let res = await doQuery(query, { db_type: state.newDb?.type, connection: JSON.stringify(state.newDb?.connection) });
+                                    let res = await apolloExecute(query, { db_type: state.newDb?.type, connection: JSON.stringify(state.newDb?.connection) });
                                     if (res.check_database_connection === "Ok")
                                         Modal.success({ title: state.newDb?.connection.database, content: t("connection Ok"), centered: true });
                                     else

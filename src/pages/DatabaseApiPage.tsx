@@ -50,6 +50,7 @@ export function DatabaseApiPage() {
             return !!table.disabled;
     }
 
+    // ********* FILTERS *************
     const [filterOnlyOn, setFilterOnlyOn] = React.useState<boolean>(false);
 
     let database_native_tables_filtered: NativeTableRecord[] = [];
@@ -61,6 +62,19 @@ export function DatabaseApiPage() {
             return res;
         });
     }
+
+    // ********* ACTIONS *************
+    let setTable_on_off = (native_table: NativeTableRecord, on_off_value: boolean) => {
+        let table = getTableBySchemaAndName(native_table.schema_name, native_table.table_name);
+        if (on_off_value) {
+
+        }
+        else {
+            table.disabled = true;
+        }
+    }
+
+
 
     return useObserver(() => {
 

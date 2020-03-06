@@ -1,7 +1,7 @@
 import { Rule } from 'rc-field-form/lib/interface';
 import i18next from 'i18next';
 import { gql } from '@apollo/client';
-import { doQuery } from '../apolloClient';
+import { apolloExecute } from '../apolloClient';
 const t = i18next.t.bind(i18next);
 /*
 interface BaseRule {
@@ -43,7 +43,7 @@ export function getDatabaseApiNameRules(addMode: boolean): Rule[] {
             validator: async (rule: any, value: string) => {
                 if (addMode) {
                     let query = gql`query($db_name:String) {database_exists(db_name:$db_name)}`;
-                    let res = await doQuery(query, { db_name: value });
+                    let res = await apolloExecute(query, { db_name: value });
                     if (res.database_exists)
                         throw new Error(t("db_already_exists", { name: value }));
                 }
