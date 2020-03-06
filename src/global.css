@@ -23501,3 +23501,6 @@ y .ant-btn.ant-btn-icon-only .fas {
 .highlight-text {
   background-color: #fff1b8;
 }
+mark.highlight-text {
+  padding: 0.07em;
+}

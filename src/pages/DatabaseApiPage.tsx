@@ -14,6 +14,13 @@ const { TabPane } = Tabs;
 
 type NativeTableRecord = { schema_name: string, table_name: string };
 
+function getTableApiDisplayName(db: IDatabase, table: ITable): string {
+    if (db.prefix && db.prefix !== "")
+        return db.prefix + "_" + table.name;
+    else
+        return table.name;
+}
+
 export function DatabaseApiPage() {
     const { t, i18n } = useTranslation();
 
@@ -57,16 +64,16 @@ export function DatabaseApiPage() {
     const [filterByName, setFilterByName] = React.useState<string>("");
 
     let database_native_tables_filtered: NativeTableRecord[] = [];
-    if (query_result.data) {
+    if (query_result && query_result.data) {
         let filterByName_lowered = (filterByName || "").toLowerCase();
-        database_native_tables_filtered = query_result.data?.database_native_tables.filter((native_table: NativeTableRecord) => {
+        database_native_tables_filtered = query_result.data.database_native_tables.filter((native_table: NativeTableRecord) => {
             let res = true;
             if (filterOnlyActive && isTable_off(native_table.schema_name, native_table.table_name))
                 res = false;
             if (typeof filterByName == "string" && filterByName !== "") {
                 let table = getTableBySchemaAndName(native_table.schema_name, native_table.table_name);
-                let conditon_1 = native_table.table_name.toLowerCase().indexOf(filterByName_lowered) > -1;
-                let conditon_2 = table && table.name.toLowerCase().indexOf(filterByName_lowered) > -1;
+                let conditon_1 = (native_table.schema_name + "." + native_table.table_name).toLowerCase().indexOf(filterByName_lowered) > -1;
+                let conditon_2 = table && getTableApiDisplayName((query_result as any).data.database, table).toLowerCase().indexOf(filterByName_lowered) > -1;
                 if (!conditon_1 && !conditon_2) {
                     res = false;
                 }
@@ -162,12 +169,13 @@ export function DatabaseApiPage() {
                             <Column title={t("api")} dataIndex="api_name" key="api_name" className="database-text-color"
                                 render={(text: string, record: NativeTableRecord) => {
                                     if (!isTable_off(record.schema_name, record.table_name)) {
+                                        let table = getTableBySchemaAndName(record.schema_name, record.table_name);
                                         return (
                                             <Highlighter
                                                 highlightClassName="highlight-text"
                                                 searchWords={[filterByName]}
                                                 autoEscape={true}
-                                                textToHighlight={query_result.data?.database.prefix + "_" + record.schema_name + "_" + record.table_name}
+                                                textToHighlight={getTableApiDisplayName((query_result as any).data.database, table)}
                                             />
                                         )
                                         //return query_result.data?.database.prefix + "_" + record.schema_name + "_" + record.table_name;
