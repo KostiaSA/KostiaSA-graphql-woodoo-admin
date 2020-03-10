@@ -9,6 +9,7 @@ import { IDatabase, ITable } from "../../../voodoo-shared/ISchema";
 import { Fragment } from 'react';
 import Search from "antd/lib/input/Search";
 import Highlighter from "react-highlight-words";
+import { apolloExecute } from "../apolloClient";
 
 const { TabPane } = Tabs;
 
@@ -83,14 +84,40 @@ export function DatabaseApiPage() {
         });
     }
 
+
+    let upsertTable = async (table: ITable) => {
+        let query = gql`
+                    mutation ($table: JSON!) {
+                        save_table(table: $table)
+                    }
+                `;
+        await apolloExecute(query, { table: JSON.stringify(table) })
+    }
+
     // ********* ACTIONS *************
-    let setTable_on_off = (native_table: NativeTableRecord, on_off_value: boolean) => {
+    let setTable_on_off = async (native_table: NativeTableRecord, on_off_value: boolean) => {
         let table = getTableBySchemaAndName(native_table.schema_name, native_table.table_name);
         if (on_off_value) {
-
+            if (table) {
+                table.disabled = false;
+            }
+            else {
+                table = {
+                    dbname: db_name || "",
+                    columns: [],
+                    dbo: native_table.schema_name,
+                    name: native_table.table_name,
+                    disabled: false,
+                    version: 1,
+                }
+            }
+            await upsertTable(table);
+            await query_result.refetch();
         }
         else {
             table.disabled = true;
+            await upsertTable(table);
+            await query_result.refetch();
         }
     }
 
@@ -162,7 +189,12 @@ export function DatabaseApiPage() {
                             <Column title={<span>{t("api_on_off")}</span>} key="api_on_off" align="center"
                                 render={(text, record: NativeTableRecord, index) => {
                                     return (
-                                        <Checkbox checked={!isTable_off(record.schema_name, record.table_name)} ></Checkbox>
+                                        <Checkbox
+                                            checked={!isTable_off(record.schema_name, record.table_name)}
+                                            onChange={(e) => setTable_on_off(record, e.target.checked)}
+                                        >
+
+                                        </Checkbox>
                                     )
                                 }}
                             />
