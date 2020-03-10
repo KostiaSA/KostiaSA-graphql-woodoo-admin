@@ -92,7 +92,7 @@ const resources = {
             "server_host": "адрес сервера (URL)",
             "server_port": "порт сервера",
             "database_name": "имя базы данных",
-            "api_name": "api-имя",
+            "api_name": "API-имя",
             "db_name": "имя базы",
             "login": "логин",
             "password": "пароль",
@@ -131,6 +131,7 @@ const resources = {
             // DatabaseApiPage
             "Database_API": "API базы данных",
             "Tables": "Таблицы",
+            "table": "таблица",
             "api_on_off": "API вкл/выкл",
             "only_api_on": "только активные API",
             "search_by_name": "фильтр",
@@ -149,7 +150,7 @@ const resources = {
             "server_host": "server host",
             "server_port": "server port",
             "database_name": "database name",
-            "api_name": "api name",
+            "api_name": "API name",
             "db_name": "db name",
             "login": "login",
             "password": "password",
@@ -189,6 +190,7 @@ const resources = {
             // DatabaseApiPage
             "Database_API": "Database API",
             "Tables": "Tables",
+            "table": "table",
             "api_on_off": "API on/off",
             "only_api_on": "only active API",
             "search_by_name": "filter",

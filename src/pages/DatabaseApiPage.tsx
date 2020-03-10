@@ -5,11 +5,13 @@ import { useParams } from "react-router-dom";
 import { Tabs, Table, Popconfirm, Button, Checkbox, Form, Switch, Input } from "antd";
 import { gql, useQuery } from "@apollo/client";
 import Column from "antd/lib/table/Column";
-import { IDatabase, ITable } from "../../../voodoo-shared/ISchema";
+import { IDatabase, ITable, IColumn } from "../../../voodoo-shared/ISchema";
 import { Fragment } from 'react';
 import Search from "antd/lib/input/Search";
 import Highlighter from "react-highlight-words";
 import { apolloExecute } from "../apolloClient";
+import { translitToGraphQL } from "../utils/translitToGraphQL";
+import { sqlTypeToGraphQLType } from "../utils/sqlTypeToGraphQLType";
 
 const { TabPane } = Tabs;
 
@@ -17,9 +19,9 @@ type NativeTableRecord = { schema_name: string, table_name: string };
 
 function getTableApiDisplayName(db: IDatabase, table: ITable): string {
     if (db.prefix && db.prefix !== "")
-        return db.prefix + "_" + table.name;
+        return db.prefix + "_" + (table.object_alias || "?");
     else
-        return table.name;
+        return table.object_alias || "?";
 }
 
 export function DatabaseApiPage() {
@@ -97,16 +99,44 @@ export function DatabaseApiPage() {
     // ********* ACTIONS *************
     let setTable_on_off = async (native_table: NativeTableRecord, on_off_value: boolean) => {
         let table = getTableBySchemaAndName(native_table.schema_name, native_table.table_name);
+        // reload table 
+        if (table) {
+            let query = gql`
+                query ($db_name:String, $table_schema:String, $table_name:String) {
+                    table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
+            }`;
+            table = (await apolloExecute(query, { db_name: db_name, table_schema: native_table.schema_name, table_name: native_table.table_name })).table;
+        }
+
         if (on_off_value) {
             if (table) {
                 table.disabled = false;
             }
             else {
+                let query = gql`
+                    query ($db_name:String, $table_schema:String, $table_name:String) {
+                        native_table_columns(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
+                }`;
+                let native_columns = (await apolloExecute(query, { db_name: db_name, table_schema: native_table.schema_name, table_name: native_table.table_name })).native_table_columns;
+
                 table = {
                     dbname: db_name || "",
-                    columns: [],
+                    columns: native_columns.map((native_col: any) => {
+                        return {
+                            name: native_col.name,
+                            alias: translitToGraphQL(native_col.name),
+                            type: sqlTypeToGraphQLType(native_col.type),
+                            sql_type: native_col.type,
+                            //ref_db?: string;
+                            //ref_table?: string;
+                            //ref_columns?: { column: string, ref_column: string }[];
+
+                        } as IColumn
+                    }),
                     dbo: native_table.schema_name,
                     name: native_table.table_name,
+                    object_alias: translitToGraphQL(native_table.schema_name + "_" + native_table.table_name),
+                    array_alias: translitToGraphQL(native_table.schema_name + "_" + native_table.table_name) + "s",
                     disabled: false,
                     version: 1,
                 }
@@ -198,7 +228,7 @@ export function DatabaseApiPage() {
                                     )
                                 }}
                             />
-                            <Column title={t("api")} dataIndex="api_name" key="api_name" className="database-text-color"
+                            <Column title={t("api_name")} dataIndex="api_name" key="api_name" className="database-text-color"
                                 render={(text: string, record: NativeTableRecord) => {
                                     if (!isTable_off(record.schema_name, record.table_name)) {
                                         let table = getTableBySchemaAndName(record.schema_name, record.table_name);
