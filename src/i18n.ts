@@ -136,6 +136,10 @@ const resources = {
             "only_api_on": "только активные API",
             "search_by_name": "фильтр",
             "input_search_text": "введите текст для поиска",
+
+            // TableApiPage
+            "Table_API": "API таблицы",
+            "Columns": "Колонки",
         }
     },
 
@@ -195,6 +199,10 @@ const resources = {
             "only_api_on": "only active API",
             "search_by_name": "filter",
             "input_search_text": "input search text",
+
+            // TableApiPage
+            "Table_API": "Table API",
+            "Columns": "Columns",
         }
     }
 };

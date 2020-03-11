@@ -20,6 +20,7 @@ import { useLocalStore, useObserver } from "mobx-react-lite"
 import { apolloClient } from "./apolloClient";
 import { AppErrorBoundary } from "./AppErrorBoundary";
 import { DatabaseApiPage } from "./pages/DatabaseApiPage";
+import { TableApiPage } from "./pages/TableApiPage";
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -170,6 +171,9 @@ export default function App() {
                     </Route>
                     <Route path="/database-api/:db_name">
                       <DatabaseApiPage></DatabaseApiPage>
+                    </Route>
+                    <Route path="/table-api/:db_name/:table_schema/:table_name">
+                      <TableApiPage></TableApiPage>
                     </Route>
                     <Route path="/tables">
                       <div>tables</div>

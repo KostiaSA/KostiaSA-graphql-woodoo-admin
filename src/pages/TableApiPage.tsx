@@ -16,6 +16,7 @@ import { sqlTypeToGraphQLType } from "../utils/sqlTypeToGraphQLType";
 const { TabPane } = Tabs;
 
 type NativeTableRecord = { schema_name: string, table_name: string };
+type INativeTableColumn = { name: string, type: string };
 
 function getTableApiDisplayName(db: IDatabase, table: ITable): string {
     if (db.prefix && db.prefix !== "")
@@ -24,60 +25,55 @@ function getTableApiDisplayName(db: IDatabase, table: ITable): string {
         return table.object_alias || "?";
 }
 
-export function DatabaseApiPage() {
+export function TableApiPage() {
     const { t, i18n } = useTranslation();
+
     const history = useHistory();
 
-    let { db_name } = useParams();
-    console.log(useParams())
+    let { db_name, table_schema, table_name } = useParams();
 
     let query = gql`
-    query ($db_name: String) {
+    query ($db_name:String, $table_schema:String, $table_name:String) {
         database(db_name:$db_name)
-        database_native_tables(db_name:$db_name)
-        database_tables(db_name:$db_name)
+        table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
+        native_table_columns(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
     }`;
 
-    const query_result = useQuery<{ database_native_tables: NativeTableRecord[], database: IDatabase, database_tables: ITable[] }>(query, { variables: { db_name } });
+    const query_result = useQuery<{ database: IDatabase, table: ITable, native_table_columns: INativeTableColumn[] }>(query, { variables: { db_name, table_schema, table_name } });
 
-    let tablesByName: { [name: string]: ITable } = {};
+    let columnsByName: { [name: string]: IColumn } = {};
 
     if (query_result.data) {
-        for (let table of query_result.data?.database_tables) {
-            let key = table.dbo + ":" + table.name;
-            tablesByName[key] = table;
+        for (let column of query_result.data?.table.columns) {
+            let key = column.name;
+            columnsByName[key] = column;
         }
     }
-    console.log("tablesByName", tablesByName);
+    console.log("columnsByName", columnsByName);
 
-    let getTableBySchemaAndName = (schema: string, name: string): ITable => {
-        let key = schema + ":" + name;
-        return tablesByName[key];
-    }
-
-    let isTable_off = (schema: string, name: string): boolean => {
-        let table = getTableBySchemaAndName(schema, name);
-        if (!table)
+    let isColumn_off = (col_name: string): boolean => {
+        let column = columnsByName[col_name];
+        if (!column)
             return true;
         else
-            return !!table.disabled;
+            return !!column.disabled;
     }
 
     // ********* FILTERS *************
     const [filterOnlyActive, setFilterOnlyActive] = React.useState<boolean>(false);
     const [filterByName, setFilterByName] = React.useState<string>("");
 
-    let database_native_tables_filtered: NativeTableRecord[] = [];
+    let native_columns_filtered: INativeTableColumn[] = [];
     if (query_result && query_result.data) {
         let filterByName_lowered = (filterByName || "").toLowerCase();
-        database_native_tables_filtered = query_result.data.database_native_tables.filter((native_table: NativeTableRecord) => {
+        native_columns_filtered = query_result.data.native_table_columns.filter((native_column: INativeTableColumn) => {
             let res = true;
-            if (filterOnlyActive && isTable_off(native_table.schema_name, native_table.table_name))
+            if (filterOnlyActive && isColumn_off(native_column.name))
                 res = false;
             if (typeof filterByName == "string" && filterByName !== "") {
-                let table = getTableBySchemaAndName(native_table.schema_name, native_table.table_name);
-                let conditon_1 = (native_table.schema_name + "." + native_table.table_name).toLowerCase().indexOf(filterByName_lowered) > -1;
-                let conditon_2 = table && getTableApiDisplayName((query_result as any).data.database, table).toLowerCase().indexOf(filterByName_lowered) > -1;
+                let column = columnsByName[native_column.name];
+                let conditon_1 = (native_column.name).toLowerCase().indexOf(filterByName_lowered) > -1;
+                let conditon_2 = column && column.alias && column.alias.toLowerCase().indexOf(filterByName_lowered) > -1;
                 if (!conditon_1 && !conditon_2) {
                     res = false;
                 }
@@ -98,58 +94,47 @@ export function DatabaseApiPage() {
     }
 
     // ********* ACTIONS *************
-    let setTable_on_off = async (native_table: NativeTableRecord, on_off_value: boolean) => {
-        let table = getTableBySchemaAndName(native_table.schema_name, native_table.table_name);
+    let setColumn_on_off = async (native_column: INativeTableColumn, on_off_value: boolean) => {
+
         // reload table 
-        if (table) {
-            let query = gql`
+        let table_to_update: ITable;
+        let query = gql`
                 query ($db_name:String, $table_schema:String, $table_name:String) {
                     table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
             }`;
-            table = (await apolloExecute(query, { db_name: db_name, table_schema: native_table.schema_name, table_name: native_table.table_name })).table;
-        }
+
+        table_to_update = (await apolloExecute(query, { db_name: db_name, table_schema, table_name })).table;
+        let column = table_to_update.columns.find((c) => c.name === native_column.name);// columnsByName[native_column.name];
 
         if (on_off_value) {
-            if (table) {
-                table.disabled = false;
+            if (column) {
+                column.disabled = false;
             }
             else {
-                let query = gql`
-                    query ($db_name:String, $table_schema:String, $table_name:String) {
-                        native_table_columns(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
-                }`;
-                let native_columns = (await apolloExecute(query, { db_name: db_name, table_schema: native_table.schema_name, table_name: native_table.table_name })).native_table_columns;
+                column = {
+                    name: native_column.name,
+                    alias: translitToGraphQL(native_column.name),
+                    type: sqlTypeToGraphQLType(native_column.type),
+                    sql_type: native_column.type,
+                    //ref_db?: string;
+                    //ref_table?: string;
+                    //ref_columns?: { column: string, ref_column: string }[];
 
-                table = {
-                    dbname: db_name || "",
-                    columns: native_columns.map((native_col: any) => {
-                        return {
-                            name: native_col.name,
-                            alias: translitToGraphQL(native_col.name),
-                            type: sqlTypeToGraphQLType(native_col.type),
-                            sql_type: native_col.type,
-                            //ref_db?: string;
-                            //ref_table?: string;
-                            //ref_columns?: { column: string, ref_column: string }[];
-
-                        } as IColumn
-                    }),
-                    dbo: native_table.schema_name,
-                    name: native_table.table_name,
-                    object_alias: translitToGraphQL(native_table.schema_name + "_" + native_table.table_name),
-                    array_alias: translitToGraphQL(native_table.schema_name + "_" + native_table.table_name) + "s",
-                    disabled: false,
-                    version: 1,
-                }
+                } as IColumn
             }
-            await upsertTable(table);
-            await query_result.refetch();
+            table_to_update.columns.push(column);
+            columnsByName[native_column.name] = column;
+
+
         }
         else {
-            table.disabled = true;
-            await upsertTable(table);
-            await query_result.refetch();
+            if (column) {
+                column.disabled = true;
+            }
         }
+
+        await upsertTable(table_to_update);
+        await query_result.refetch();
     }
 
 
@@ -158,9 +143,9 @@ export function DatabaseApiPage() {
 
         return (
             <div style={{ maxWidth: 1200, margin: "20px 20px 0 20px" }}>
-                <h2>{t("Database_API")}: {db_name}</h2>
+                <h2>{t("Table_API")}: {db_name}.{table_schema}.{table_name}</h2>
                 <Tabs defaultActiveKey="1" animated={false}>
-                    <TabPane tab={t("Tables")} key="tables" >
+                    <TabPane tab={t("Columns")} key="columns" >
                         <Form layout="inline">
                             <Form.Item label={t("search_by_name")}>
                                 <Search
@@ -176,7 +161,7 @@ export function DatabaseApiPage() {
                             </Form.Item>
                         </Form>
                         <Table
-                            dataSource={database_native_tables_filtered}
+                            dataSource={native_columns_filtered}
                             rowKey="prefix"
                             size="small"
                             bordered
@@ -202,23 +187,23 @@ export function DatabaseApiPage() {
                         >
 
                             <Column title={t("table")} dataIndex="table_name" key="table" className="database-text-color"
-                                render={(text: string, record: NativeTableRecord) => {
+                                render={(text: string, record: INativeTableColumn) => {
                                     return (
                                         <Highlighter
                                             highlightClassName="highlight-text"
                                             searchWords={[filterByName]}
                                             autoEscape={true}
-                                            textToHighlight={record.schema_name + "." + record.table_name}
+                                            textToHighlight={record.name}
                                         />
                                     )
                                 }}
                             />
                             <Column title={<span>{t("api_on_off")}</span>} key="api_on_off" align="center"
-                                render={(text, record: NativeTableRecord, index) => {
+                                render={(text, record: INativeTableColumn, index) => {
                                     return (
                                         <Checkbox
-                                            checked={!isTable_off(record.schema_name, record.table_name)}
-                                            onChange={(e) => setTable_on_off(record, e.target.checked)}
+                                            checked={!isColumn_off(record.name)}
+                                            onChange={(e) => setColumn_on_off(record, e.target.checked)}
                                         >
 
                                         </Checkbox>
@@ -226,15 +211,15 @@ export function DatabaseApiPage() {
                                 }}
                             />
                             <Column title={t("api_name")} dataIndex="api_name" key="api_name" className="database-text-color"
-                                render={(text: string, record: NativeTableRecord) => {
-                                    if (!isTable_off(record.schema_name, record.table_name)) {
-                                        let table = getTableBySchemaAndName(record.schema_name, record.table_name);
+                                render={(text: string, record: INativeTableColumn) => {
+                                    if (!isColumn_off(record.name)) {
+                                        let col = columnsByName[record.name];
                                         return (
                                             <Highlighter
                                                 highlightClassName="highlight-text"
                                                 searchWords={[filterByName]}
                                                 autoEscape={true}
-                                                textToHighlight={getTableApiDisplayName((query_result as any).data.database, table)}
+                                                textToHighlight={col.alias}
                                             />
                                         )
                                         //return query_result.data?.database.prefix + "_" + record.schema_name + "_" + record.table_name;
@@ -243,18 +228,36 @@ export function DatabaseApiPage() {
                                         return "";
                                 }}
                             />
-                            <Column title={<span style={{ float: "right" }}>{t("actions")}</span>} key="operation"
-                                render={(text, record: NativeTableRecord, index) => {
-                                    if (!isTable_off(record.schema_name, record.table_name))
+                            {/* <Column title={<span style={{ float: "right" }}>{t("actions")}</span>} key="operation"
+                                render={(text, record: INativeTableColumn, index) => {
+                                    if (!isColumn_off(record.schema_name, record.table_name))
                                         return (
                                             <Fragment>
+                                                <Popconfirm
+                                                    title={t("delete_database?", { name: record.table_name })}
+                                                    okText={t("Yes")}
+                                                    cancelText={t("No")}
+                                                    onConfirm={async () => {
+                                                        //await deleteDatabaseAction(record.name);
+                                                    }}>
+                                                    <Button size="small" type="link" danger style={{ float: "right", cursor: "pointer" }}
+                                                        className={`form-title-color-delete`}
+                                                    >
+                                                        {t("delete")}
+                                                    </Button>
+                                                </Popconfirm>
+                                                <Button size="small" type="link" style={{ float: "right" }}
+                                                    className={`form-title-color-edit`}
+                                                    onClick={() => {
+                                                        //console.log("start-edit-database, record=", record);
+                                                        //startEditDatabaseAction(record);
+                                                    }}
+                                                >{t("edit")}
+                                                </Button>
                                                 <Button size="small" type="link" style={{ float: "right" }}
                                                     // className={`form-title-color-add`}
                                                     onClick={() => {
-                                                        history.push("/table-api/" +
-                                                            encodeURIComponent(db_name || "_") + "/" +
-                                                            encodeURIComponent(record.schema_name || "_") + "/" +
-                                                            encodeURIComponent(record.table_name || "_"));
+                                                        //history.push("/database-api/" + encodeURIComponent(record.name));
                                                     }}
                                                 >{t("api_setup")}
                                                 </Button>
@@ -264,7 +267,7 @@ export function DatabaseApiPage() {
                                     else
                                         return null;
                                 }}
-                            />
+                            /> */}
 
                         </Table>
                     </TabPane>
