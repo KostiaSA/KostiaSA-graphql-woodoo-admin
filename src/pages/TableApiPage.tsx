@@ -121,11 +121,9 @@ export function TableApiPage() {
                     //ref_columns?: { column: string, ref_column: string }[];
 
                 } as IColumn
+                table_to_update.columns.push(column);
+                columnsByName[native_column.name] = column;
             }
-            table_to_update.columns.push(column);
-            columnsByName[native_column.name] = column;
-
-
         }
         else {
             if (column) {
