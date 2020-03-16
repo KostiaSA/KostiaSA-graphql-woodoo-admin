@@ -9,7 +9,7 @@ import { IDatabase, ITable, IColumn } from "../../../voodoo-shared/ISchema";
 import { Fragment } from 'react';
 import Search from "antd/lib/input/Search";
 import Highlighter from "react-highlight-words";
-import { apolloExecute } from "../apolloClient";
+import { apolloExecute } from "../apolloExecute";
 import { translitToGraphQL } from "../utils/translitToGraphQL";
 import { sqlTypeToGraphQLType } from "../utils/sqlTypeToGraphQLType";
 

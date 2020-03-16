@@ -1,7 +1,7 @@
 import { Rule } from 'rc-field-form/lib/interface';
 import i18next from 'i18next';
 import { gql } from '@apollo/client';
-import { apolloExecute } from '../apolloClient';
+import { apolloExecute } from "../apolloExecute";
 const t = i18next.t.bind(i18next);
 /*
 interface BaseRule {

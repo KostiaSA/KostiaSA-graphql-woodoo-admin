@@ -13,6 +13,8 @@ export function sqlTypeToGraphQLType(sql_type: string): string {
         case "nvarchar": return "String";
         case "text": return "String";
         case "datetime": return "String";
+        case "money": return "Float";
+        case "uniqueidentifier": return "String";
         default: throw new Error("sqlTypeToGraphQLType(): unknown sql_type " + sql_type);
     }
 
