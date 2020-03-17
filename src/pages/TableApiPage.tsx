@@ -184,7 +184,7 @@ export function TableApiPage() {
                         // }}
                         >
 
-                            <Column title={t("table")} dataIndex="table_name" key="table" className="database-text-color"
+                            <Column title={t("table_column")} dataIndex="table_name" key="table" className="database-text-color"
                                 render={(text: string, record: INativeTableColumn) => {
                                     return (
                                         <Highlighter

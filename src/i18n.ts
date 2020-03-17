@@ -140,6 +140,7 @@ const resources = {
             // TableApiPage
             "Table_API": "API таблицы",
             "Columns": "Колонки",
+            "table_column": "колонка",
         }
     },
 
@@ -203,6 +204,7 @@ const resources = {
             // TableApiPage
             "Table_API": "Table API",
             "Columns": "Columns",
+            "table_column": "table column",
         }
     }
 };

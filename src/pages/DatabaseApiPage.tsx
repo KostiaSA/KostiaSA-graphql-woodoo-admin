@@ -12,6 +12,7 @@ import Highlighter from "react-highlight-words";
 import { apolloExecute } from "../apolloExecute";
 import { translitToGraphQL } from "../utils/translitToGraphQL";
 import { sqlTypeToGraphQLType } from "../utils/sqlTypeToGraphQLType";
+import { useLocalStorage } from 'react-use';
 
 const { TabPane } = Tabs;
 
@@ -25,11 +26,14 @@ function getTableApiDisplayName(db: IDatabase, table: ITable): string {
 }
 
 export function DatabaseApiPage() {
+
     const { t, i18n } = useTranslation();
     const history = useHistory();
 
     let { db_name } = useParams();
     console.log(useParams())
+
+    let localStoragePrefix = "DatabaseApiPage:" + db_name + ":";
 
     let query = gql`
     query ($db_name: String) {
@@ -64,8 +68,8 @@ export function DatabaseApiPage() {
     }
 
     // ********* FILTERS *************
-    const [filterOnlyActive, setFilterOnlyActive] = React.useState<boolean>(false);
-    const [filterByName, setFilterByName] = React.useState<string>("");
+    const [filterOnlyActive, setFilterOnlyActive] = useLocalStorage<boolean>(localStoragePrefix + "filterOnlyActive", false);
+    const [filterByName, setFilterByName] = useLocalStorage<string>(localStoragePrefix + "filterByName", "");
 
     let database_native_tables_filtered: NativeTableRecord[] = [];
     if (query_result && query_result.data) {
@@ -167,12 +171,18 @@ export function DatabaseApiPage() {
                                     allowClear
                                     size="small"
                                     placeholder={t("input_search_text")}
+                                    defaultValue={filterByName}
                                     onSearch={(value: string) => setFilterByName(value)}
                                     style={{ width: 250 }}
                                 />
                             </Form.Item>
                             <Form.Item label={t("only_api_on")}>
-                                <Switch size="small" checked={filterOnlyActive} onChange={(enable) => setFilterOnlyActive(enable)} />
+                                <Switch size="small" checked={filterOnlyActive}
+                                    onChange={(enable) => {
+                                        setFilterOnlyActive(enable);
+                                        localStorage.setItem(localStoragePrefix + "FilterOnlyActive", JSON.stringify(enable));
+                                    }}
+                                />
                             </Form.Item>
                         </Form>
                         <Table
