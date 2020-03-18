@@ -13,6 +13,7 @@ import { apolloExecute } from "../apolloExecute";
 import { translitToGraphQL } from "../utils/translitToGraphQL";
 import { sqlTypeToGraphQLType } from "../utils/sqlTypeToGraphQLType";
 import { useLocalStorage } from 'react-use';
+import { getStringHash } from '../utils/getStringHash';
 
 const { TabPane } = Tabs;
 
@@ -68,8 +69,8 @@ export function DatabaseApiPage() {
     }
 
     // ********* FILTERS *************
-    const [filterOnlyActive, setFilterOnlyActive] = useLocalStorage<boolean>(localStoragePrefix + "filterOnlyActive", false);
-    const [filterByName, setFilterByName] = useLocalStorage<string>(localStoragePrefix + "filterByName", "");
+    const [filterOnlyActive, setFilterOnlyActive] = useLocalStorage<boolean>(getStringHash(localStoragePrefix + "filterOnlyActive"), false);
+    const [filterByName, setFilterByName] = useLocalStorage<string>(getStringHash(localStoragePrefix + "filterByName"), "");
 
     let database_native_tables_filtered: NativeTableRecord[] = [];
     if (query_result && query_result.data) {
@@ -132,6 +133,7 @@ export function DatabaseApiPage() {
                             alias: translitToGraphQL(native_col.name),
                             type: sqlTypeToGraphQLType(native_col.type),
                             sql_type: native_col.type,
+                            description: native_col.name,
                             //ref_db?: string;
                             //ref_table?: string;
                             //ref_columns?: { column: string, ref_column: string }[];
@@ -140,6 +142,7 @@ export function DatabaseApiPage() {
                     }),
                     dbo: native_table.schema_name,
                     name: native_table.table_name,
+                    description: native_table.schema_name + "." + native_table.table_name,
                     object_alias: translitToGraphQL(native_table.schema_name + "_" + native_table.table_name),
                     array_alias: translitToGraphQL(native_table.schema_name + "_" + native_table.table_name) + "s",
                     disabled: false,

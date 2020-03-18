@@ -141,6 +141,10 @@ const resources = {
             "Table_API": "API таблицы",
             "Columns": "Колонки",
             "table_column": "колонка",
+            "column_setup": "настр. колонку",
+
+            // TableColumnApiPage
+            "Column_API": "Колонка",
         }
     },
 
@@ -205,6 +209,10 @@ const resources = {
             "Table_API": "Table API",
             "Columns": "Columns",
             "table_column": "table column",
+            "column_setup": "column setup",
+
+            // TableColumnApiPage
+            "Column_API": "Table column API",
         }
     }
 };

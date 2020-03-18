@@ -12,6 +12,8 @@ import Highlighter from "react-highlight-words";
 import { apolloExecute } from "../apolloExecute";
 import { translitToGraphQL } from "../utils/translitToGraphQL";
 import { sqlTypeToGraphQLType } from "../utils/sqlTypeToGraphQLType";
+import { useLocalStorage } from "react-use";
+import { getStringHash } from "../utils/getStringHash";
 
 const { TabPane } = Tabs;
 
@@ -31,6 +33,8 @@ export function TableApiPage() {
     const history = useHistory();
 
     let { db_name, table_schema, table_name } = useParams();
+
+    let localStoragePrefix = "DatabaseApiPage:" + db_name + ":" + table_schema + ":" + table_name + ":";
 
     let query = gql`
     query ($db_name:String, $table_schema:String, $table_name:String) {
@@ -60,8 +64,8 @@ export function TableApiPage() {
     }
 
     // ********* FILTERS *************
-    const [filterOnlyActive, setFilterOnlyActive] = React.useState<boolean>(false);
-    const [filterByName, setFilterByName] = React.useState<string>("");
+    const [filterOnlyActive, setFilterOnlyActive] = useLocalStorage<boolean>(getStringHash(localStoragePrefix + "filterOnlyActive"), false);
+    const [filterByName, setFilterByName] = useLocalStorage<string>(getStringHash(localStoragePrefix + "filterByName"), "");
 
     let native_columns_filtered: INativeTableColumn[] = [];
     if (query_result && query_result.data) {
@@ -115,6 +119,7 @@ export function TableApiPage() {
                     name: native_column.name,
                     alias: translitToGraphQL(native_column.name),
                     type: sqlTypeToGraphQLType(native_column.type),
+                    description: native_column.name,
                     sql_type: native_column.type,
                     //ref_db?: string;
                     //ref_table?: string;
@@ -141,7 +146,7 @@ export function TableApiPage() {
 
         return (
             <div style={{ maxWidth: 1200, margin: "20px 20px 0 20px" }}>
-                <h2>{t("Table_API")}: {db_name}.{table_schema}.{table_name}</h2>
+                <h2>{t("Table_API")}: <span style={{ fontSize: 18, color: "gray" }}>{db_name}.</span>{table_schema}.{table_name}</h2>
                 <Tabs defaultActiveKey="1" animated={false}>
                     <TabPane tab={t("Columns")} key="columns" >
                         <Form layout="inline">
@@ -184,7 +189,7 @@ export function TableApiPage() {
                         // }}
                         >
 
-                            <Column title={t("table_column")} dataIndex="table_name" key="table" className="database-text-color"
+                            <Column title={t("table_column")} dataIndex="table_name" key="table" className="table-text-color"
                                 render={(text: string, record: INativeTableColumn) => {
                                     return (
                                         <Highlighter
@@ -193,6 +198,13 @@ export function TableApiPage() {
                                             autoEscape={true}
                                             textToHighlight={record.name}
                                         />
+                                    )
+                                }}
+                            />
+                            <Column title={t("sql type")} dataIndex="table_name" key="table" className="table-text-color"
+                                render={(text: string, record: INativeTableColumn) => {
+                                    return (
+                                        <span>{record.type}</span>
                                     )
                                 }}
                             />
@@ -208,7 +220,7 @@ export function TableApiPage() {
                                     )
                                 }}
                             />
-                            <Column title={t("api_name")} dataIndex="api_name" key="api_name" className="database-text-color"
+                            <Column title={t("api_name")} dataIndex="api_name" key="api_name" className="table-text-colorXXX"
                                 render={(text: string, record: INativeTableColumn) => {
                                     if (!isColumn_off(record.name)) {
                                         let col = columnsByName[record.name];
@@ -226,38 +238,23 @@ export function TableApiPage() {
                                         return "";
                                 }}
                             />
-                            {/* <Column title={<span style={{ float: "right" }}>{t("actions")}</span>} key="operation"
+                            <Column title={<span style={{ float: "right" }}>{t("actions")}</span>} key="operation"
                                 render={(text, record: INativeTableColumn, index) => {
-                                    if (!isColumn_off(record.schema_name, record.table_name))
+                                    if (!isColumn_off(record.name))
                                         return (
                                             <Fragment>
-                                                <Popconfirm
-                                                    title={t("delete_database?", { name: record.table_name })}
-                                                    okText={t("Yes")}
-                                                    cancelText={t("No")}
-                                                    onConfirm={async () => {
-                                                        //await deleteDatabaseAction(record.name);
-                                                    }}>
-                                                    <Button size="small" type="link" danger style={{ float: "right", cursor: "pointer" }}
-                                                        className={`form-title-color-delete`}
-                                                    >
-                                                        {t("delete")}
-                                                    </Button>
-                                                </Popconfirm>
-                                                <Button size="small" type="link" style={{ float: "right" }}
-                                                    className={`form-title-color-edit`}
-                                                    onClick={() => {
-                                                        //console.log("start-edit-database, record=", record);
-                                                        //startEditDatabaseAction(record);
-                                                    }}
-                                                >{t("edit")}
-                                                </Button>
                                                 <Button size="small" type="link" style={{ float: "right" }}
                                                     // className={`form-title-color-add`}
                                                     onClick={() => {
                                                         //history.push("/database-api/" + encodeURIComponent(record.name));
+                                                        history.push("/table-column-api/" +
+                                                            encodeURIComponent(db_name || "_") + "/" +
+                                                            encodeURIComponent(table_schema || "_") + "/" +
+                                                            encodeURIComponent(table_name || "_") + "/" +
+                                                            encodeURIComponent(record.name || "_"));
+
                                                     }}
-                                                >{t("api_setup")}
+                                                >{t("column_setup")}
                                                 </Button>
 
                                             </Fragment>
@@ -265,7 +262,7 @@ export function TableApiPage() {
                                     else
                                         return null;
                                 }}
-                            /> */}
+                            />
 
                         </Table>
                     </TabPane>

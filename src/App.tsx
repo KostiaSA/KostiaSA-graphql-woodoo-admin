@@ -21,6 +21,7 @@ import { apolloClient } from "./apolloClient";
 import { AppErrorBoundary } from "./AppErrorBoundary";
 import { DatabaseApiPage } from "./pages/DatabaseApiPage";
 import { TableApiPage } from "./pages/TableApiPage";
+import { TableColumnSetupPage } from "./pages/TableColumnSetupPage";
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -174,6 +175,9 @@ export default function App() {
                     </Route>
                     <Route path="/table-api/:db_name/:table_schema/:table_name">
                       <TableApiPage></TableApiPage>
+                    </Route>
+                    <Route path="/table-column-api/:db_name/:table_schema/:table_name/:column_name">
+                      <TableColumnSetupPage></TableColumnSetupPage>
                     </Route>
                     <Route path="/tables">
                       <div>tables</div>
