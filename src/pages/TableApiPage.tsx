@@ -201,7 +201,7 @@ export function TableApiPage() {
                                     )
                                 }}
                             />
-                            <Column title={t("sql type")} dataIndex="table_name" key="table" className="table-text-color"
+                            <Column title={t("sql_type")} dataIndex="table_name" key="table" className="table-text-color"
                                 render={(text: string, record: INativeTableColumn) => {
                                     return (
                                         <span>{record.type}</span>

@@ -49,6 +49,7 @@ export function TableColumnSetupPage() {
             column(db_name:$db_name, table_schema:$table_schema, table_name:$table_name, column_name:$column_name)
         }`;
 
+    //    const query_result = useQuery<{ database: IDatabase, column: IColumn }>(query, { fetchPolicy: "cache-first", variables: { db_name, table_schema, table_name, column_name } });
     const query_result = useQuery<{ database: IDatabase, column: IColumn }>(query, { variables: { db_name, table_schema, table_name, column_name } });
 
     const history = useHistory();
@@ -56,25 +57,8 @@ export function TableColumnSetupPage() {
 
     const [column_form] = Form.useForm();
 
-    // const saveDatabaseAction = async () => {
-    //     if (await isFormValidatedOk(tableEditForm)) {
-    //         let query = gql`
-    //             mutation ($db: JSON!) {
-    //                 save_database(database: $db)
-    //             }
-    //         `;
-    //         await apolloExecute(query, { db: JSON.stringify(state.newDb) })
-    //         //await saveDatabase({ variables: { db: JSON.stringify(state.newDb) } });
-    //         await refetch();
-    //         setState({ ...state, dbEditorMode: "none" });
-    //         setDbState({});
-    //         //console.log("database saved !!!");
-    //     }
-    //     else {
-    //         Modal.error({ title: t("first_correct_the_errors"), centered: true });
-    //     }
+    let [changedFields, setChangedFields] = useState();
 
-    // }
 
 
     const groupHeaderFormItemLayout = {
@@ -90,6 +74,45 @@ export function TableColumnSetupPage() {
         },
     };
 
+    let upsertTable = async (table: ITable) => {
+        let query = gql`
+                    mutation ($table: JSON!) {
+                        save_table(table: $table)
+                    }
+                `;
+        await apolloExecute(query, { table: JSON.stringify(table) })
+    }
+
+    const saveChanges = async () => {
+        if (await isFormValidatedOk(column_form)) {
+            let table_to_update: ITable;
+            let query = gql`
+                query ($db_name:String, $table_schema:String, $table_name:String) {
+                    table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
+            }`;
+
+            table_to_update = (await apolloExecute(query, { db_name: db_name, table_schema, table_name })).table;
+            let columnIndex = table_to_update.columns.findIndex((c) => c.name === column_name);
+            let column = table_to_update.columns[columnIndex];
+            //console.log("column-до", column)
+            table_to_update.columns[columnIndex] = deepMerge(column, changedFields)
+            //console.log("column-после", column)
+
+            await upsertTable(table_to_update);
+        }
+        else {
+            Modal.error({ title: t("first_correct_the_errors"), centered: true });
+            return
+        }
+
+        history.goBack();
+    }
+    const cancelChanges = async () => {
+        history.goBack();
+    }
+
+
+
     //const [dbState, setDbState] = useState<{ [db_name: string]: string }>({});
 
 
@@ -98,10 +121,11 @@ export function TableColumnSetupPage() {
         if (!query_result.data)
             return null;
 
-        console.log(query_result.data);
+        //console.log(query_result.data);
 
         return (
             <div style={{ maxWidth: 1200, margin: "20px 20px 0 20px" }}>
+
                 <h2>{t("Column_API")}: <span style={{ fontSize: 18, color: "gray" }}>{db_name}.{table_schema}.{table_name}.</span>{column_name}</h2>
                 <Form
 
@@ -111,13 +135,14 @@ export function TableColumnSetupPage() {
                     size="small"
                     form={column_form}
                     initialValues={query_result.data?.column}
-                    onValuesChange={(changedFields: any, allFields: any) => {
-                        //state.newDb = deepMerge(state.newDb, changedFields)
+                    onValuesChange={(_changedFields: any, allFields: any) => {
+                        setChangedFields(deepMerge(changedFields || {}, _changedFields));
+                        //console.log("changedFields", changedFields);
                     }}
                 >
-                    {/* <Form.Item {...groupHeaderFormItemLayout}>
+                    <Form.Item {...groupHeaderFormItemLayout}>
                         <h3 className={`form-title-color`}>{t("API_GRAPHQL_info")}</h3>
-                    </Form.Item> */}
+                    </Form.Item>
 
                     {/* <Form.Item name="name" label={t("api_name")} rules={getDatabaseApiNameRules(state.dbEditorMode === "add")}
                     //    rules={getSchemaTableNameRules()}
@@ -126,61 +151,29 @@ export function TableColumnSetupPage() {
                     </Form.Item>
  */}
                     <Form.Item name="alias" label={t("api_name")} rules={getDatabaseApiPrefixRules()}>
-                        <Input autoComplete="off" style={{ maxWidth: 150 }} />
+                        <Input autoComplete="off" style={{ maxWidth: 350 }} />
                     </Form.Item>
 
                     <Form.Item name="description" label={t("description")}
                         rules={[{ max: 255, message: t("max_length_exceeded", { name: t("description"), length: 255 }) }]}
 
                     >
-                        <Input autoComplete="off" style={{ maxWidth: 400 }} />
+                        <Input autoComplete="off" style={{ maxWidth: 500 }} />
+                    </Form.Item>
+
+                    <Form.Item {...groupHeaderFormItemLayout}>
+                        <h3 className={`form-title-color`}>{t("API_GRAPHQL_info")}</h3>
                     </Form.Item>
 
 
-                    <Form.Item name="type" label={t("server_type")} >
-                        <Select defaultValue="mssql" style={{ width: 120 }}>
-                            {DATABASE_TYPES.map((db) => <Option value={db} key={db} >{db}</Option>)}
-                        </Select>
+                    <Form.Item wrapperCol={{ offset: 5, span: 16 }}>
+                        <Button key="back" size="middle" onClick={cancelChanges}>
+                            {!changedFields ? t("Close") : t("Cancel")}
+                        </Button>
+                        <Button key="submit" size="middle" type="primary" style={{ marginLeft: 8 }} onClick={saveChanges} disabled={!changedFields}>
+                            {t("Save")}
+                        </Button>
                     </Form.Item>
-
-                    <Form.Item
-                        name={["connection", "host"]}
-                        label={t("server_host")}
-                        rules={[
-                            {
-                                required: true,
-                                message: t("cannot_be_empty", { name: t("server_host") })
-                            },
-                            {
-                                max: 255,
-                                message: t("max_length_exceeded", { name: t("server_host"), length: 255 })
-                            },
-
-                        ]}
-                    >
-                        <Input autoComplete="off" style={{ maxWidth: 400 }} />
-                    </Form.Item>
-
-                    <Form.Item
-                        name={["connection", "port"]}
-                        label={t("server_port")}
-                        rules={[{ type: "integer", min: 0, max: 65535 }]}
-                    >
-                        <InputNumber max={65535} style={{ maxWidth: 120 }} />
-                    </Form.Item>
-
-                    <Form.Item name={["connection", "username"]} label={t("login")}>
-                        <Input autoComplete="off" style={{ maxWidth: 250 }} />
-                    </Form.Item>
-
-                    <Form.Item name={["connection", "password"]} label={t("password")} >
-                        <Input.Password autoComplete="off" style={{ maxWidth: 250 }} />
-                    </Form.Item>
-
-                    <Form.Item name={["connection", "database"]} label={t("database")}>
-                        <Input autoComplete="off" style={{ maxWidth: 400 }} />
-                    </Form.Item>
-
                 </Form>
             </div>
 

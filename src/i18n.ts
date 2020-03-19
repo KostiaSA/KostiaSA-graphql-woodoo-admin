@@ -142,6 +142,7 @@ const resources = {
             "Columns": "Колонки",
             "table_column": "колонка",
             "column_setup": "настр. колонку",
+            "sql_type": "тип данных",
 
             // TableColumnApiPage
             "Column_API": "Колонка",
@@ -209,6 +210,7 @@ const resources = {
             "Table_API": "Table API",
             "Columns": "Columns",
             "table_column": "table column",
+            "sql_type": "data type",
             "column_setup": "column setup",
 
             // TableColumnApiPage
