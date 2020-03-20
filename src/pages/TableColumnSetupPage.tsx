@@ -151,7 +151,7 @@ export function TableColumnSetupPage() {
                     </Form.Item>
  */}
                     <Form.Item name="alias" label={t("api_name")} rules={getDatabaseApiPrefixRules()}>
-                        <Input autoComplete="off" style={{ maxWidth: 350 }} />
+                        <Input autoComplete="off" style={{ maxWidth: 350 }} className="api-name-text-color" />
                     </Form.Item>
 
                     <Form.Item name="description" label={t("description")}

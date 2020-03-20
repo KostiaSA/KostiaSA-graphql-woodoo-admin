@@ -109,7 +109,7 @@ const resources = {
             "error": "ошибка",
             "checking...": "проверка...",
             "connection Ok": "подключение Ok",
-            "first_correct_the_errors": "сначала исправьте ошибки",
+            "Description": "Описание",
 
             // validation rules
             "bad_identifier": "{{name}} может содержать только латин. буквы, цифры, _ и начинаться с буквы или _",
@@ -143,6 +143,10 @@ const resources = {
             "table_column": "колонка",
             "column_setup": "настр. колонку",
             "sql_type": "тип данных",
+            "API_names": "API имена",
+            "single_object_api_name": "api имя объекта",
+            "objects_array_api_name": "api имя списка",
+
 
             // TableColumnApiPage
             "Column_API": "Колонка",
@@ -178,6 +182,7 @@ const resources = {
             "checking...": "checking...",
             "connection Ok": "connection Ok",
             "first_correct_the_errors": "first correct the errors",
+            "Description": "Description",
 
             // validation rules
             "bad_identifier": "{{name}} can only contain latin. letters, numbers, underscore and begin with a letter or underscore",
@@ -212,6 +217,9 @@ const resources = {
             "table_column": "table column",
             "sql_type": "data type",
             "column_setup": "column setup",
+            "API_names": "API names",
+            "single_object_api_name": "single object api name",
+            "objects_array_api_name": "objects array api name",
 
             // TableColumnApiPage
             "Column_API": "Table column API",

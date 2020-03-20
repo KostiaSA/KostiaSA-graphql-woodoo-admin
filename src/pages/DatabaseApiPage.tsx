@@ -14,6 +14,7 @@ import { translitToGraphQL } from "../utils/translitToGraphQL";
 import { sqlTypeToGraphQLType } from "../utils/sqlTypeToGraphQLType";
 import { useLocalStorage } from 'react-use';
 import { getStringHash } from '../utils/getStringHash';
+import { GET_DATABASE_DEFAULT_PORT } from "../const";
 
 const { TabPane } = Tabs;
 
@@ -35,6 +36,8 @@ export function DatabaseApiPage() {
     console.log(useParams())
 
     let localStoragePrefix = "DatabaseApiPage:" + db_name + ":";
+
+    const [activeTabKey, setActiveTabKey] = useLocalStorage<string>(getStringHash(localStoragePrefix + "activeTabKey"), "Tables");
 
     let query = gql`
     query ($db_name: String) {
@@ -163,11 +166,26 @@ export function DatabaseApiPage() {
 
     return useObserver(() => {
 
+        if (!query_result.data)
+            return null;
+
+        let conn = query_result.data?.database.connection;
+        let db = conn.host;
+        if (conn.port != GET_DATABASE_DEFAULT_PORT(query_result.data?.database.type)) {
+            db += ":" + conn.port;
+        }
+        db += "." + conn.database;
+
+
+        let db_alias = query_result.data?.database.name;
+        if (query_result.data?.database.prefix)
+            db_alias = db_alias + " (" + query_result.data?.database.prefix + ")";
+
         return (
             <div style={{ maxWidth: 1200, margin: "20px 20px 0 20px" }}>
-                <h2>{t("Database_API")}: {db_name}</h2>
-                <Tabs defaultActiveKey="1" animated={false}>
-                    <TabPane tab={t("Tables")} key="tables" >
+                <h2>{t("Database_API")}: {db}&nbsp;=>&nbsp;<span className="api-name-text-color">{db_alias}</span></h2>
+                <Tabs activeKey={activeTabKey} animated={false} onChange={(key) => setActiveTabKey(key)}>
+                    <TabPane tab={t("Tables")} key="Tables" >
                         <Form layout="inline">
                             <Form.Item label={t("search_by_name")}>
                                 <Search
@@ -214,7 +232,7 @@ export function DatabaseApiPage() {
                         // }}
                         >
 
-                            <Column title={t("table")} dataIndex="table_name" key="table" className="database-text-color"
+                            <Column title={t("table")} dataIndex="table_name" key="table"
                                 render={(text: string, record: NativeTableRecord) => {
                                     return (
                                         <Highlighter
@@ -238,7 +256,7 @@ export function DatabaseApiPage() {
                                     )
                                 }}
                             />
-                            <Column title={t("api_name")} dataIndex="api_name" key="api_name" className="database-text-color"
+                            <Column title={t("api_name")} dataIndex="api_name" key="api_name" className="api-name-text-color"
                                 render={(text: string, record: NativeTableRecord) => {
                                     if (!isTable_off(record.schema_name, record.table_name)) {
                                         let table = getTableBySchemaAndName(record.schema_name, record.table_name);
@@ -282,7 +300,7 @@ export function DatabaseApiPage() {
                         </Table>
                     </TabPane>
 
-                    <TabPane tab={t("Views")} key="views">
+                    <TabPane tab={t("Views")} key="Views">
                         Content of Tab Pane 2
                     </TabPane>
                     <TabPane tab={t("Procedures")} key="procedures">

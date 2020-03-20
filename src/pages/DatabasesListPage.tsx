@@ -318,11 +318,11 @@ export function DatabasesListPage() {
                         <Form.Item name="name" label={t("api_name")} rules={getDatabaseApiNameRules(state.dbEditorMode === "add")}
                         //    rules={getSchemaTableNameRules()}
                         >
-                            <Input autoComplete="off" style={{ maxWidth: 400 }} disabled={state.dbEditorMode === "edit"} />
+                            <Input autoComplete="off" style={{ maxWidth: 400 }} disabled={state.dbEditorMode === "edit"} className="api-name-text-color" />
                         </Form.Item>
 
                         <Form.Item name="prefix" label={t("api_prefix")} rules={getDatabaseApiPrefixRules()}>
-                            <Input autoComplete="off" style={{ maxWidth: 150 }} />
+                            <Input autoComplete="off" style={{ maxWidth: 150 }} className="api-name-text-color" />
                         </Form.Item>
 
                         <Form.Item name="description" label={t("description")}

@@ -2,11 +2,11 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useObserver } from "mobx-react-lite";
 import { useParams, useHistory } from "react-router-dom";
-import { Tabs, Table, Popconfirm, Button, Checkbox, Form, Switch, Input } from "antd";
+import { Tabs, Table, Popconfirm, Button, Checkbox, Form, Switch, Input, Modal } from "antd";
 import { gql, useQuery } from "@apollo/client";
 import Column from "antd/lib/table/Column";
 import { IDatabase, ITable, IColumn } from "../../../voodoo-shared/ISchema";
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import Search from "antd/lib/input/Search";
 import Highlighter from "react-highlight-words";
 import { apolloExecute } from "../apolloExecute";
@@ -14,6 +14,9 @@ import { translitToGraphQL } from "../utils/translitToGraphQL";
 import { sqlTypeToGraphQLType } from "../utils/sqlTypeToGraphQLType";
 import { useLocalStorage } from "react-use";
 import { getStringHash } from "../utils/getStringHash";
+import { deepMerge } from "../utils/deepMerge";
+import { getDatabaseApiPrefixRules } from "../validators/validators";
+import { isFormValidatedOk } from "../utils/isFormValidatedOk";
 
 const { TabPane } = Tabs;
 
@@ -63,6 +66,22 @@ export function TableApiPage() {
             return !!column.disabled;
     }
 
+    const [table_form] = Form.useForm();
+    let [changedFields, setChangedFields] = useState();
+    const groupHeaderFormItemLayout = {
+        wrapperCol: {
+            xs: {
+                span: 24,
+                offset: 0,
+            },
+            sm: {
+                span: 16,
+                offset: 5,
+            },
+        },
+    };
+
+
     // ********* FILTERS *************
     const [filterOnlyActive, setFilterOnlyActive] = useLocalStorage<boolean>(getStringHash(localStoragePrefix + "filterOnlyActive"), false);
     const [filterByName, setFilterByName] = useLocalStorage<string>(getStringHash(localStoragePrefix + "filterByName"), "");
@@ -87,6 +106,7 @@ export function TableApiPage() {
         });
     }
 
+    const [activeTabKey, setActiveTabKey] = useLocalStorage<string>(getStringHash(localStoragePrefix + "activeTabKey"), "Columns");
 
     let upsertTable = async (table: ITable) => {
         let query = gql`
@@ -95,6 +115,30 @@ export function TableApiPage() {
                     }
                 `;
         await apolloExecute(query, { table: JSON.stringify(table) })
+    }
+
+    const saveChanges = async () => {
+        if (await isFormValidatedOk(table_form)) {
+            let table_to_update: ITable;
+            let query = gql`
+                query ($db_name:String, $table_schema:String, $table_name:String) {
+                    table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
+            }`;
+
+            table_to_update = (await apolloExecute(query, { db_name: db_name, table_schema, table_name })).table;
+            table_to_update = deepMerge(table_to_update, changedFields)
+
+            await upsertTable(table_to_update);
+        }
+        else {
+            Modal.error({ title: t("first_correct_the_errors"), centered: true });
+            return
+        }
+
+        history.goBack();
+    }
+    const cancelChanges = async () => {
+        history.goBack();
     }
 
     // ********* ACTIONS *************
@@ -143,12 +187,18 @@ export function TableApiPage() {
 
 
     return useObserver(() => {
+        if (!query_result.data)
+            return null;
 
         return (
             <div style={{ maxWidth: 1200, margin: "20px 20px 0 20px" }}>
-                <h2>{t("Table_API")}: <span style={{ fontSize: 18, color: "gray" }}>{db_name}.</span>{table_schema}.{table_name}</h2>
-                <Tabs defaultActiveKey="1" animated={false}>
-                    <TabPane tab={t("Columns")} key="columns" >
+                <h2>
+                    {t("Table_API")}: <span style={{ fontSize: 18, color: "gray" }}>{db_name}.</span>{table_schema}.{table_name}
+                    &nbsp;=>&nbsp;<span className="api-name-text-color">{query_result.data?.table.object_alias}</span>,
+                    &nbsp;<span className="api-name-text-color">{query_result.data?.table.array_alias}</span>
+                </h2>
+                <Tabs activeKey={activeTabKey} animated={false} onChange={(key) => setActiveTabKey(key)}>
+                    <TabPane tab={t("Columns")} key="Columns" forceRender>
                         <Form layout="inline">
                             <Form.Item label={t("search_by_name")}>
                                 <Search
@@ -220,7 +270,7 @@ export function TableApiPage() {
                                     )
                                 }}
                             />
-                            <Column title={t("api_name")} dataIndex="api_name" key="api_name" className="table-text-colorXXX"
+                            <Column title={t("api_name")} dataIndex="api_name" key="api_name" className="api-name-text-color"
                                 render={(text: string, record: INativeTableColumn) => {
                                     if (!isColumn_off(record.name)) {
                                         let col = columnsByName[record.name];
@@ -267,8 +317,52 @@ export function TableApiPage() {
                         </Table>
                     </TabPane>
 
-                    <TabPane tab={t("Views")} key="views">
-                        Content of Tab Pane 2
+                    <TabPane tab={t("API_names")} key="API_names" forceRender>
+                        <Form
+
+                            labelCol={{ span: 5 }}
+                            wrapperCol={{ span: 15 }}
+                            layout="horizontal"
+                            size="small"
+                            form={table_form}
+                            initialValues={query_result.data?.table}
+                            onValuesChange={(_changedFields: any, allFields: any) => {
+                                setChangedFields(deepMerge(changedFields || {}, _changedFields));
+                                //console.log("changedFields", changedFields);
+                            }}
+                        >
+                            <Form.Item {...groupHeaderFormItemLayout}>
+                                <h3 className={`form-title-color`}>{t("API_GRAPHQL_info")}</h3>
+                            </Form.Item>
+
+                            {/* <Form.Item name="name" label={t("api_name")} rules={getDatabaseApiNameRules(state.dbEditorMode === "add")}
+                    //    rules={getSchemaTableNameRules()}
+                    >
+                        <Input autoComplete="off" style={{ maxWidth: 400 }} disabled={state.dbEditorMode === "edit"} />
+                    </Form.Item>
+ */}
+                            <Form.Item name="object_alias" label={t("single_object_api_name")} rules={getDatabaseApiPrefixRules()}>
+                                <Input autoComplete="off" style={{ maxWidth: 350 }} />
+                            </Form.Item>
+
+                            <Form.Item name="array_alias" label={t("objects_array_api_name")} rules={getDatabaseApiPrefixRules()}>
+                                <Input autoComplete="off" style={{ maxWidth: 350 }} />
+                            </Form.Item>
+
+                            <Form.Item name="description" label={t("description")}
+                                rules={[{ max: 255, message: t("max_length_exceeded", { name: t("description"), length: 255 }) }]}
+
+                            >
+                                <Input autoComplete="off" style={{ maxWidth: 500 }} />
+                            </Form.Item>
+
+
+                            <Form.Item wrapperCol={{ offset: 5, span: 16 }}>
+                                <Button key="submit" size="middle" type="primary" style={{ marginLeft: 8 }} onClick={saveChanges} disabled={!changedFields}>
+                                    {t("Save")}
+                                </Button>
+                            </Form.Item>
+                        </Form>
                     </TabPane>
                     <TabPane tab={t("Procedures")} key="procedures">
                         Content of Tab Pane 3
