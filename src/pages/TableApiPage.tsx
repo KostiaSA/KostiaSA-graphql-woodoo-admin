@@ -5,8 +5,8 @@ import { useParams, useHistory } from "react-router-dom";
 import { Tabs, Table, Popconfirm, Button, Checkbox, Form, Switch, Input, Modal } from "antd";
 import { gql, useQuery } from "@apollo/client";
 import Column from "antd/lib/table/Column";
-import { IDatabase, ITable, IColumn } from "../../../voodoo-shared/ISchema";
-import { Fragment, useState } from 'react';
+import { IDatabase, ITable, IColumn, IRefColumn } from "../../../voodoo-shared/ISchema";
+import { Fragment, useState, ReactNode } from 'react';
 import Search from "antd/lib/input/Search";
 import Highlighter from "react-highlight-words";
 import { apolloExecute } from "../apolloExecute";
@@ -43,10 +43,11 @@ export function TableApiPage() {
     query ($db_name:String, $table_schema:String, $table_name:String) {
         database(db_name:$db_name)
         table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
+        table_ref_tables(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
         native_table_columns(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
     }`;
 
-    const query_result = useQuery<{ database: IDatabase, table: ITable, native_table_columns: INativeTableColumn[] }>(query, { variables: { db_name, table_schema, table_name } });
+    const query_result = useQuery<{ database: IDatabase, table: ITable, table_ref_tables: ITable[], native_table_columns: INativeTableColumn[] }>(query, { variables: { db_name, table_schema, table_name } });
 
     let columnsByName: { [name: string]: IColumn } = {};
 
@@ -108,6 +109,15 @@ export function TableApiPage() {
 
     const [activeTabKey, setActiveTabKey] = useLocalStorage<string>(getStringHash(localStoragePrefix + "activeTabKey"), "Columns");
 
+    let selectTable = async (db_name?: String, table_schema?: String, table_name?: String): Promise<ITable> => {
+        let query = gql`
+                query ($db_name:String, $table_schema:String, $table_name:String) {
+                    table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
+            }`;
+
+        return (await apolloExecute(query, { db_name, table_schema, table_name })).table;
+    }
+
     let upsertTable = async (table: ITable) => {
         let query = gql`
                     mutation ($table: JSON!) {
@@ -119,13 +129,13 @@ export function TableApiPage() {
 
     const saveChanges = async () => {
         if (await isFormValidatedOk(table_form)) {
-            let table_to_update: ITable;
-            let query = gql`
-                query ($db_name:String, $table_schema:String, $table_name:String) {
-                    table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
-            }`;
+            let table_to_update: ITable = await selectTable(db_name, table_schema, table_name);
+            // let query = gql`
+            //     query ($db_name:String, $table_schema:String, $table_name:String) {
+            //         table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
+            // }`;
 
-            table_to_update = (await apolloExecute(query, { db_name: db_name, table_schema, table_name })).table;
+            // table_to_update = (await apolloExecute(query, { db_name: db_name, table_schema, table_name })).table;
             table_to_update = deepMerge(table_to_update, changedFields)
 
             await upsertTable(table_to_update);
@@ -145,13 +155,15 @@ export function TableApiPage() {
     let setColumn_on_off = async (native_column: INativeTableColumn, on_off_value: boolean) => {
 
         // reload table 
-        let table_to_update: ITable;
-        let query = gql`
-                query ($db_name:String, $table_schema:String, $table_name:String) {
-                    table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
-            }`;
+        let table_to_update: ITable = await selectTable(db_name, table_schema, table_name);
 
-        table_to_update = (await apolloExecute(query, { db_name: db_name, table_schema, table_name })).table;
+        // let table_to_update: ITable;
+        // let query = gql`
+        //         query ($db_name:String, $table_schema:String, $table_name:String) {
+        //             table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
+        //     }`;
+
+        // table_to_update = (await apolloExecute(query, { db_name: db_name, table_schema, table_name })).table;
         let column = table_to_update.columns.find((c) => c.name === native_column.name);// columnsByName[native_column.name];
 
         if (on_off_value) {
@@ -184,6 +196,21 @@ export function TableApiPage() {
         await query_result.refetch();
     }
 
+    let set_object_relationship_on_off = async (column: IColumn, on_off_value: boolean) => {
+
+        // reload table 
+        let table_to_update: ITable = await selectTable(db_name, table_schema, table_name);
+        let table_column = table_to_update.columns.find((col => col.name === column.name));
+        if (table_column) {
+            table_column.disabled = !on_off_value;
+            await upsertTable(table_to_update);
+            await query_result.refetch();
+        }
+        else {
+            throw new Error("internal error in 'set_object_relationship_on_off'");
+        }
+    }
+
     let getColumnsCountStr = (): string => {
         if (query_result.data) {
             let count = query_result.data?.native_table_columns.length;
@@ -207,6 +234,16 @@ export function TableApiPage() {
             return query_result.data?.table.columns.filter((col: IColumn) => typeof col.ref_db === "string" && col.ref_db.length > 0);
         }
         return [];
+    }
+
+    let getRefTableApiName = (db_name?: string, table_schema?: string, table_name?: string): string => {
+        if (query_result.data) {
+            for (let ref_table of query_result.data?.table_ref_tables) {
+                if (ref_table.dbname === db_name && ref_table.dbo === table_schema && ref_table.name === table_name)
+                    return ref_table.object_alias || ref_table.name;
+            }
+        }
+        return "error";
     }
 
 
@@ -244,24 +281,6 @@ export function TableApiPage() {
                             size="small"
                             bordered
                             pagination={{ pageSize: 75 }}
-                            title={() =>
-                                <div style={{ minHeight: 26 }}>
-                                    {/* <Button
-                                        style={{ float: "right" }}
-                                        size="small"
-                                        onClick={startAddDatabaseAction}
-                                        className={`form-title-color-add`}
-                                    >
-                                        {"+ " + t("add_new_database")}
-                                    </Button> */}
-                                </div>}
-                        // rowSelection={{
-                        //     type: "checkbox",
-                        //     getCheckboxProps: (record: NativeTableRecord) => ({
-                        //         disabled: record.table_name === 'Disabled User', // Column configuration not to be checked
-                        //         name: record.table_name,
-                        //     }),
-                        // }}
                         >
 
                             <Column title={t("table_column")} dataIndex="table_name" key="table" className="table-text-color"
@@ -362,8 +381,8 @@ export function TableApiPage() {
                                 </div>}
                         >
 
-                            <Column title={t("table_column")} dataIndex="table_name" key="table" className="table-text-color"
-                                render={(text: string, record: INativeTableColumn) => {
+                            {/* <Column title={t("table_column")} dataIndex="table_name" key="table" className="table-text-color"
+                                render={(text: string, record: IColumn) => {
                                     return (
                                         <Highlighter
                                             highlightClassName="highlight-text"
@@ -380,35 +399,78 @@ export function TableApiPage() {
                                         <span>#{typeof record.ref_db}#</span>
                                     )
                                 }}
+                            /> */}
+                            <Column title={t("api_name")} dataIndex="api_name" key="api_name" className="api-name-text-color"
+                                render={(text: string, record: IColumn) => {
+                                    return (
+                                        <span>{record.alias}</span>
+                                    )
+                                }}
                             />
                             <Column title={<span>{t("api_on_off")}</span>} key="api_on_off" align="center"
-                                render={(text, record: INativeTableColumn, index) => {
+                                render={(text, record: IColumn, index) => {
                                     return (
                                         <Checkbox
-                                            checked={!isColumn_off(record.name)}
-                                            onChange={(e) => setColumn_on_off(record, e.target.checked)}
+                                            checked={!record.disabled}
+                                            onChange={(e) => set_object_relationship_on_off(record, e.target.checked)}
                                         >
 
                                         </Checkbox>
                                     )
                                 }}
                             />
-                            <Column title={t("api_name")} dataIndex="api_name" key="api_name" className="api-name-text-color"
-                                render={(text: string, record: INativeTableColumn) => {
-                                    if (!isColumn_off(record.name)) {
-                                        let col = columnsByName[record.name];
+                            <Column title={t("ref_database")} dataIndex="ref_database" key="ref_database"
+                                render={(text: string, record: IColumn) => {
+                                    let style = record.disabled ? { color: "silver" } : {};
+                                    return (
+                                        <span style={style}>{record.ref_db}</span>
+                                    )
+                                }}
+                            />
+                            <Column title={t("ref_table")} dataIndex="ref_table" key="ref_table"
+                                render={(text: string, record: IColumn) => {
+                                    let style = record.disabled ? { color: "silver" } : {};
+                                    return (
+                                        <Fragment>
+                                            <span style={style}>{record.ref_table}</span>
+                                            <span style={style} className="api-name-text-color">
+                                                &nbsp;( {getRefTableApiName(record.ref_db, record.ref_schema, record.ref_table)} )
+                                            </span>
+                                        </Fragment>
+                                    )
+                                }}
+                            />
+                            <Column title={t("ref_columns")} key="ref_columns"
+                                render={(text: string, record: IColumn) => {
+
+                                    let refTableApiName = getRefTableApiName(record.ref_db, record.ref_schema, record.ref_table);
+                                    let renderRefCol = (ref_col: IRefColumn): ReactNode => {
+                                        let style = record.disabled ? { color: "silver" } : {};
                                         return (
-                                            <Highlighter
-                                                highlightClassName="highlight-text"
-                                                searchWords={[filterByName]}
-                                                autoEscape={true}
-                                                textToHighlight={col.alias}
-                                            />
-                                        )
-                                        //return query_result.data?.database.prefix + "_" + record.schema_name + "_" + record.table_name;
+                                            <span style={style}>
+                                                {table_name}.{ref_col.column} => {record.ref_table}.{ref_col.ref_column}
+                                            </span>)
                                     }
+
+                                    if (record.ref_columns?.length === 0)
+                                        return null
+                                    else if (record.ref_columns?.length === 1)
+                                        return renderRefCol(record.ref_columns[0])
                                     else
-                                        return "";
+                                        return (
+                                            <table style={{ border: "none", padding: 0 }}>
+                                                <tbody>
+                                                    {record.ref_columns?.map((ref_col: IRefColumn) => {
+                                                        return (
+                                                            <tr style={{ border: "none", padding: 0 }}>
+                                                                <td style={{ border: "none", padding: 0 }}>{table_name}.{ref_col.column}</td>
+                                                                <td style={{ border: "none", padding: 0 }}>=></td>
+                                                                <td style={{ border: "none", padding: 0 }}>{record.ref_table}.{ref_col.ref_column}</td></tr>
+                                                        )
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        )
                                 }}
                             />
                             <Column title={<span style={{ float: "right" }}>{t("actions")}</span>} key="operation"
