@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Fragment, useState, useContext, } from "react";
-import { IDatabase, ITable, IColumn, } from "../../../voodoo-shared/ISchema";
+import { IDatabase, ITable, IColumn, IRefColumn, } from "../../../voodoo-shared/ISchema";
 import { gql, useQuery, useMutation, useLazyQuery } from "@apollo/client";
 import { ConsoleSqlOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
@@ -162,9 +162,108 @@ export function TableColumnSetupPage() {
                     </Form.Item>
 
                     <Form.Item {...groupHeaderFormItemLayout}>
-                        <h3 className={`form-title-color`}>{t("API_GRAPHQL_info")}</h3>
+                        <h3 className={`form-title-color`}>{t("Object_relationships")}</h3>
                     </Form.Item>
 
+                    <Form.Item>
+                        <Table
+                            dataSource={query_result.data?.column.ref_columns}
+                            rowKey="prefix"
+                            size="small"
+                            bordered
+                            pagination={{ pageSize: 75, position: "both" }}
+                            title={() =>
+                                <div style={{ minHeight: 26 }}>
+                                    <Button
+                                        style={{ float: "right" }}
+                                        size="small"
+                                        //onClick={startAddDatabaseAction}
+                                        className={`form-title-color-add`}
+                                    >
+                                        {"+ " + t("add_new_relationship")}
+                                    </Button>
+                                </div>}
+                        >
+
+                            <Column title={t("table_column")} dataIndex="table_name" key="table" className="table-text-color"
+                                render={(text: string, refCol: IRefColumn) => {
+                                    return (
+                                        <span>
+                                            {refCol.ref_column}
+                                        </span>
+                                    )
+                                }}
+                            />
+                            {/* <Column title={t("sql_type")} dataIndex="table_name" key="table" className="table-text-color"
+                                render={(text: string, record: INativeTableColumn) => {
+                                    return (
+                                        <span>{record.type}</span>
+                                    )
+                                }}
+                            />
+                            <Column title={<span>{t("api_on_off")}</span>} key="api_on_off" align="center"
+                                render={(text, record: INativeTableColumn, index) => {
+                                    return (
+                                        <Checkbox
+                                            checked={!isColumn_off(record.name)}
+                                            onChange={(e) => setColumn_on_off(record, e.target.checked)}
+                                        >
+
+                                        </Checkbox>
+                                    )
+                                }}
+                            />
+                            <Column title={t("api_name")} dataIndex="api_name" key="api_name" className="api-name-text-color"
+                                render={(text: string, record: INativeTableColumn) => {
+                                    if (!isColumn_off(record.name)) {
+                                        let col = columnsByName[record.name];
+                                        return (
+                                            <Highlighter
+                                                highlightClassName="highlight-text"
+                                                searchWords={[filterByName]}
+                                                autoEscape={true}
+                                                textToHighlight={col.alias}
+                                            />
+                                        )
+                                        //return query_result.data?.database.prefix + "_" + record.schema_name + "_" + record.table_name;
+                                    }
+                                    else
+                                        return "";
+                                }}
+                            />
+                            <Column title={<span style={{ float: "right" }}>{t("actions")}</span>} key="operation"
+                                render={(text, record: INativeTableColumn, index) => {
+                                    if (!isColumn_off(record.name))
+                                        return (
+                                            <Fragment>
+                                                <Button size="small" type="link" style={{ float: "right" }}
+                                                    // className={`form-title-color-add`}
+                                                    onClick={() => {
+                                                        //history.push("/database-api/" + encodeURIComponent(record.name));
+                                                        history.push("/table-column-api/" +
+                                                            encodeURIComponent(db_name || "_") + "/" +
+                                                            encodeURIComponent(table_schema || "_") + "/" +
+                                                            encodeURIComponent(table_name || "_") + "/" +
+                                                            encodeURIComponent(record.name || "_"));
+
+                                                    }}
+                                                >{t("column_setup")}
+                                                </Button>
+
+                                            </Fragment>
+                                        )
+                                    else
+                                        return null;
+                                }}
+                            /> */}
+
+                        </Table>
+
+                    </Form.Item>
+
+                    <Form.Item {...groupHeaderFormItemLayout}>
+                        <h3 className={`form-title-color`}>{t("Array_relationships")}</h3>
+                    </Form.Item>
 
                     <Form.Item wrapperCol={{ offset: 5, span: 16 }}>
                         <Button key="back" size="middle" onClick={cancelChanges}>

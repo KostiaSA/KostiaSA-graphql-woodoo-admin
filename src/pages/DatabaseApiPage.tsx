@@ -162,6 +162,15 @@ export function DatabaseApiPage() {
         }
     }
 
+    let getTablesCountStr = (): string => {
+        if (query_result.data) {
+            let count = query_result.data.database_native_tables.length;
+            if (count > 0)
+                return ` (${count})`;
+        }
+        return "";
+    }
+
 
 
     return useObserver(() => {
@@ -185,7 +194,7 @@ export function DatabaseApiPage() {
             <div style={{ maxWidth: 1200, margin: "20px 20px 0 20px" }}>
                 <h2>{t("Database_API")}: {db}&nbsp;=>&nbsp;<span className="api-name-text-color">{db_alias}</span></h2>
                 <Tabs activeKey={activeTabKey} animated={false} onChange={(key) => setActiveTabKey(key)}>
-                    <TabPane tab={t("Tables")} key="Tables" >
+                    <TabPane tab={t("Tables") + getTablesCountStr()} key="Tables" >
                         <Form layout="inline">
                             <Form.Item label={t("search_by_name")}>
                                 <Search
@@ -206,12 +215,13 @@ export function DatabaseApiPage() {
                                 />
                             </Form.Item>
                         </Form>
+                        <br></br>
                         <Table
                             dataSource={database_native_tables_filtered}
                             rowKey="prefix"
                             size="small"
                             bordered
-                            pagination={{ pageSize: 75, position: "both" }}
+                            pagination={{ pageSize: 75 }}
                             title={() =>
                                 <div style={{ minHeight: 26 }}>
                                     {/* <Button

@@ -184,6 +184,30 @@ export function TableApiPage() {
         await query_result.refetch();
     }
 
+    let getColumnsCountStr = (): string => {
+        if (query_result.data) {
+            let count = query_result.data?.native_table_columns.length;
+            if (count > 0)
+                return ` (${count})`;
+        }
+        return "";
+    }
+
+    let getObjectRelationshipsCountStr = (): string => {
+        if (query_result.data) {
+            let count = getObjectRelationships().length;
+            if (count > 0)
+                return ` (${count})`;
+        }
+        return "";
+    }
+
+    let getObjectRelationships = (): IColumn[] => {
+        if (query_result.data) {
+            return query_result.data?.table.columns.filter((col: IColumn) => typeof col.ref_db === "string" && col.ref_db.length > 0);
+        }
+        return [];
+    }
 
 
     return useObserver(() => {
@@ -198,7 +222,7 @@ export function TableApiPage() {
                     &nbsp;<span className="api-name-text-color">{query_result.data?.table.array_alias}</span>
                 </h2>
                 <Tabs activeKey={activeTabKey} animated={false} onChange={(key) => setActiveTabKey(key)}>
-                    <TabPane tab={t("Columns")} key="Columns" forceRender>
+                    <TabPane tab={t("Columns") + getColumnsCountStr()} key="Columns" forceRender>
                         <Form layout="inline">
                             <Form.Item label={t("search_by_name")}>
                                 <Search
@@ -213,12 +237,13 @@ export function TableApiPage() {
                                 <Switch size="small" checked={filterOnlyActive} onChange={(enable) => setFilterOnlyActive(enable)} />
                             </Form.Item>
                         </Form>
+                        <br></br>
                         <Table
                             dataSource={native_columns_filtered}
                             rowKey="prefix"
                             size="small"
                             bordered
-                            pagination={{ pageSize: 75, position: "both" }}
+                            pagination={{ pageSize: 75 }}
                             title={() =>
                                 <div style={{ minHeight: 26 }}>
                                     {/* <Button
@@ -317,6 +342,104 @@ export function TableApiPage() {
                         </Table>
                     </TabPane>
 
+                    <TabPane tab={t("Object_relationships") + getObjectRelationshipsCountStr()} key="Object_relationships" forceRender>
+                        <Table
+                            dataSource={getObjectRelationships()}
+                            rowKey="prefix"
+                            size="small"
+                            bordered
+                            pagination={{ pageSize: 75 }}
+                            title={() =>
+                                <div style={{ minHeight: 26 }}>
+                                    <Button
+                                        style={{ float: "right" }}
+                                        size="small"
+                                        //onClick={startAddDatabaseAction}
+                                        className={`form-title-color-add`}
+                                    >
+                                        {"+ " + t("add_new_relationship")}
+                                    </Button>
+                                </div>}
+                        >
+
+                            <Column title={t("table_column")} dataIndex="table_name" key="table" className="table-text-color"
+                                render={(text: string, record: INativeTableColumn) => {
+                                    return (
+                                        <Highlighter
+                                            highlightClassName="highlight-text"
+                                            searchWords={[filterByName]}
+                                            autoEscape={true}
+                                            textToHighlight={record.name}
+                                        />
+                                    )
+                                }}
+                            />
+                            <Column title={t("sql_type")} dataIndex="table_name" key="table" className="table-text-color"
+                                render={(text: string, record: IColumn) => {
+                                    return (
+                                        <span>#{typeof record.ref_db}#</span>
+                                    )
+                                }}
+                            />
+                            <Column title={<span>{t("api_on_off")}</span>} key="api_on_off" align="center"
+                                render={(text, record: INativeTableColumn, index) => {
+                                    return (
+                                        <Checkbox
+                                            checked={!isColumn_off(record.name)}
+                                            onChange={(e) => setColumn_on_off(record, e.target.checked)}
+                                        >
+
+                                        </Checkbox>
+                                    )
+                                }}
+                            />
+                            <Column title={t("api_name")} dataIndex="api_name" key="api_name" className="api-name-text-color"
+                                render={(text: string, record: INativeTableColumn) => {
+                                    if (!isColumn_off(record.name)) {
+                                        let col = columnsByName[record.name];
+                                        return (
+                                            <Highlighter
+                                                highlightClassName="highlight-text"
+                                                searchWords={[filterByName]}
+                                                autoEscape={true}
+                                                textToHighlight={col.alias}
+                                            />
+                                        )
+                                        //return query_result.data?.database.prefix + "_" + record.schema_name + "_" + record.table_name;
+                                    }
+                                    else
+                                        return "";
+                                }}
+                            />
+                            <Column title={<span style={{ float: "right" }}>{t("actions")}</span>} key="operation"
+                                render={(text, record: INativeTableColumn, index) => {
+                                    if (!isColumn_off(record.name))
+                                        return (
+                                            <Fragment>
+                                                <Button size="small" type="link" style={{ float: "right" }}
+                                                    // className={`form-title-color-add`}
+                                                    onClick={() => {
+                                                        //history.push("/database-api/" + encodeURIComponent(record.name));
+                                                        history.push("/table-column-api/" +
+                                                            encodeURIComponent(db_name || "_") + "/" +
+                                                            encodeURIComponent(table_schema || "_") + "/" +
+                                                            encodeURIComponent(table_name || "_") + "/" +
+                                                            encodeURIComponent(record.name || "_"));
+
+                                                    }}
+                                                >{t("column_setup")}
+                                                </Button>
+
+                                            </Fragment>
+                                        )
+                                    else
+                                        return null;
+                                }}
+                            />
+
+                        </Table>
+                    </TabPane>
+
                     <TabPane tab={t("API_names")} key="API_names" forceRender>
                         <Form
 
@@ -342,11 +465,11 @@ export function TableApiPage() {
                     </Form.Item>
  */}
                             <Form.Item name="object_alias" label={t("single_object_api_name")} rules={getDatabaseApiPrefixRules()}>
-                                <Input autoComplete="off" style={{ maxWidth: 350 }} />
+                                <Input autoComplete="off" style={{ maxWidth: 350 }} className="api-name-text-color" />
                             </Form.Item>
 
                             <Form.Item name="array_alias" label={t("objects_array_api_name")} rules={getDatabaseApiPrefixRules()}>
-                                <Input autoComplete="off" style={{ maxWidth: 350 }} />
+                                <Input autoComplete="off" style={{ maxWidth: 350 }} className="api-name-text-color" />
                             </Form.Item>
 
                             <Form.Item name="description" label={t("description")}
