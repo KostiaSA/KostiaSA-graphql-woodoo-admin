@@ -400,7 +400,7 @@ export function TableApiPage() {
                                     )
                                 }}
                             /> */}
-                            <Column title={t("api_name")} dataIndex="api_name" key="api_name" className="api-name-text-color"
+                            <Column title={t("object_column_api_name")} key="object_column_api_name" className="api-name-text-color"
                                 render={(text: string, record: IColumn) => {
                                     return (
                                         <span>{record.alias}</span>
@@ -419,7 +419,7 @@ export function TableApiPage() {
                                     )
                                 }}
                             />
-                            <Column title={t("ref_database")} dataIndex="ref_database" key="ref_database"
+                            <Column title={t("ref_database")} key="ref_database"
                                 render={(text: string, record: IColumn) => {
                                     let style = record.disabled ? { color: "silver" } : {};
                                     return (
@@ -442,23 +442,12 @@ export function TableApiPage() {
                             />
                             <Column title={t("ref_columns")} key="ref_columns"
                                 render={(text: string, record: IColumn) => {
-
-                                    let refTableApiName = getRefTableApiName(record.ref_db, record.ref_schema, record.ref_table);
-                                    let renderRefCol = (ref_col: IRefColumn): ReactNode => {
-                                        let style = record.disabled ? { color: "silver" } : {};
-                                        return (
-                                            <span style={style}>
-                                                {table_name}.{ref_col.column} => {record.ref_table}.{ref_col.ref_column}
-                                            </span>)
-                                    }
-
+                                    let style = record.disabled ? { color: "silver" } : {};
                                     if (record.ref_columns?.length === 0)
                                         return null
-                                    else if (record.ref_columns?.length === 1)
-                                        return renderRefCol(record.ref_columns[0])
                                     else
                                         return (
-                                            <table style={{ border: "none", padding: 0 }}>
+                                            <table style={{ ...style, border: "none", padding: 0 }}>
                                                 <tbody>
                                                     {record.ref_columns?.map((ref_col: IRefColumn) => {
                                                         return (
@@ -474,22 +463,30 @@ export function TableApiPage() {
                                 }}
                             />
                             <Column title={<span style={{ float: "right" }}>{t("actions")}</span>} key="operation"
-                                render={(text, record: INativeTableColumn, index) => {
-                                    if (!isColumn_off(record.name))
+                                render={(text, record: IColumn, index) => {
+                                    if (!record.disabled)
                                         return (
                                             <Fragment>
+                                                <Popconfirm
+                                                    title={t("delete_database?", { name: record.name })}
+                                                    okText={t("Yes")}
+                                                    cancelText={t("No")}
+                                                    onConfirm={async () => {
+                                                        //await deleteDatabaseAction(record.name);
+                                                    }}>
+                                                    <Button size="small" type="link" danger style={{ float: "right", cursor: "pointer" }}
+                                                        className={`form-title-color-delete`}
+                                                    >
+                                                        {t("delete")}
+                                                    </Button>
+                                                </Popconfirm>
                                                 <Button size="small" type="link" style={{ float: "right" }}
-                                                    // className={`form-title-color-add`}
+                                                    className={`form-title-color-edit`}
                                                     onClick={() => {
-                                                        //history.push("/database-api/" + encodeURIComponent(record.name));
-                                                        history.push("/table-column-api/" +
-                                                            encodeURIComponent(db_name || "_") + "/" +
-                                                            encodeURIComponent(table_schema || "_") + "/" +
-                                                            encodeURIComponent(table_name || "_") + "/" +
-                                                            encodeURIComponent(record.name || "_"));
-
+                                                        //console.log("start-edit-database, record=", record);
+                                                        //startEditDatabaseAction(record);
                                                     }}
-                                                >{t("column_setup")}
+                                                >{t("edit")}
                                                 </Button>
 
                                             </Fragment>
