@@ -19,3 +19,10 @@ export function GET_DATABASE_DRIVER(dbtype: DatabaseType): string {
     }
 }
 
+export function GET_DATABASE_DEFAULT_SCHEMA(dbtype: DatabaseType): string {
+    switch (dbtype) {
+        case "SQL Server": return "dbo";
+        case "PostgreSQL": return "public";
+        default: throw new Error("GET_DATABASE_DEFAULT_SCHEMA: todo for " + dbtype);
+    }
+}

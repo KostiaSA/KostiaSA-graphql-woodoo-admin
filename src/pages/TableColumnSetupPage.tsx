@@ -55,10 +55,9 @@ export function TableColumnSetupPage() {
     const history = useHistory();
 
 
+    // edit columns aliases
     const [column_form] = Form.useForm();
-
-    let [changedFields, setChangedFields] = useState();
-
+    let [changedApiNamesFields, setChangedApiNamesFields] = useState();
 
 
     const groupHeaderFormItemLayout = {
@@ -95,7 +94,7 @@ export function TableColumnSetupPage() {
             let columnIndex = table_to_update.columns.findIndex((c) => c.name === column_name);
             let column = table_to_update.columns[columnIndex];
             //console.log("column-до", column)
-            table_to_update.columns[columnIndex] = deepMerge(column, changedFields)
+            table_to_update.columns[columnIndex] = deepMerge(column, changedApiNamesFields)
             //console.log("column-после", column)
 
             await upsertTable(table_to_update);
@@ -136,7 +135,7 @@ export function TableColumnSetupPage() {
                     form={column_form}
                     initialValues={query_result.data?.column}
                     onValuesChange={(_changedFields: any, allFields: any) => {
-                        setChangedFields(deepMerge(changedFields || {}, _changedFields));
+                        setChangedApiNamesFields(deepMerge(changedApiNamesFields || {}, _changedFields));
                         //console.log("changedFields", changedFields);
                     }}
                 >
@@ -175,6 +174,7 @@ export function TableColumnSetupPage() {
                             title={() =>
                                 <div style={{ minHeight: 26 }}>
                                     <Button
+                                        disabled={appState.ui_disabled}
                                         style={{ float: "right" }}
                                         size="small"
                                         //onClick={startAddDatabaseAction}
@@ -194,69 +194,6 @@ export function TableColumnSetupPage() {
                                     )
                                 }}
                             />
-                            {/* <Column title={t("sql_type")} dataIndex="table_name" key="table" className="table-text-color"
-                                render={(text: string, record: INativeTableColumn) => {
-                                    return (
-                                        <span>{record.type}</span>
-                                    )
-                                }}
-                            />
-                            <Column title={<span>{t("api_on_off")}</span>} key="api_on_off" align="center"
-                                render={(text, record: INativeTableColumn, index) => {
-                                    return (
-                                        <Checkbox
-                                            checked={!isColumn_off(record.name)}
-                                            onChange={(e) => setColumn_on_off(record, e.target.checked)}
-                                        >
-
-                                        </Checkbox>
-                                    )
-                                }}
-                            />
-                            <Column title={t("api_name")} dataIndex="api_name" key="api_name" className="api-name-text-color"
-                                render={(text: string, record: INativeTableColumn) => {
-                                    if (!isColumn_off(record.name)) {
-                                        let col = columnsByName[record.name];
-                                        return (
-                                            <Highlighter
-                                                highlightClassName="highlight-text"
-                                                searchWords={[filterByName]}
-                                                autoEscape={true}
-                                                textToHighlight={col.alias}
-                                            />
-                                        )
-                                        //return query_result.data?.database.prefix + "_" + record.schema_name + "_" + record.table_name;
-                                    }
-                                    else
-                                        return "";
-                                }}
-                            />
-                            <Column title={<span style={{ float: "right" }}>{t("actions")}</span>} key="operation"
-                                render={(text, record: INativeTableColumn, index) => {
-                                    if (!isColumn_off(record.name))
-                                        return (
-                                            <Fragment>
-                                                <Button size="small" type="link" style={{ float: "right" }}
-                                                    // className={`form-title-color-add`}
-                                                    onClick={() => {
-                                                        //history.push("/database-api/" + encodeURIComponent(record.name));
-                                                        history.push("/table-column-api/" +
-                                                            encodeURIComponent(db_name || "_") + "/" +
-                                                            encodeURIComponent(table_schema || "_") + "/" +
-                                                            encodeURIComponent(table_name || "_") + "/" +
-                                                            encodeURIComponent(record.name || "_"));
-
-                                                    }}
-                                                >{t("column_setup")}
-                                                </Button>
-
-                                            </Fragment>
-                                        )
-                                    else
-                                        return null;
-                                }}
-                            /> */}
-
                         </Table>
 
                     </Form.Item>
@@ -266,14 +203,15 @@ export function TableColumnSetupPage() {
                     </Form.Item>
 
                     <Form.Item wrapperCol={{ offset: 5, span: 16 }}>
-                        <Button key="back" size="middle" onClick={cancelChanges}>
-                            {!changedFields ? t("Close") : t("Cancel")}
+                        <Button key="back" size="middle" onClick={cancelChanges} disabled={appState.ui_disabled}>
+                            {!changedApiNamesFields ? t("Close") : t("Cancel")}
                         </Button>
-                        <Button key="submit" size="middle" type="primary" style={{ marginLeft: 8 }} onClick={saveChanges} disabled={!changedFields}>
+                        <Button key="submit" size="middle" type="primary" style={{ marginLeft: 8 }} onClick={saveChanges} disabled={!changedApiNamesFields}>
                             {t("Save")}
                         </Button>
                     </Form.Item>
                 </Form>
+
             </div>
 
         )

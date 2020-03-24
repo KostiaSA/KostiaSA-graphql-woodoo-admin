@@ -2,7 +2,7 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useObserver } from "mobx-react-lite";
 import { useParams, useHistory } from "react-router-dom";
-import { Tabs, Table, Popconfirm, Button, Checkbox, Form, Switch, Input, Modal } from "antd";
+import { Tabs, Table, Popconfirm, Button, Checkbox, Form, Switch, Input, Modal, Select } from "antd";
 import { gql, useQuery } from "@apollo/client";
 import Column from "antd/lib/table/Column";
 import { IDatabase, ITable, IColumn, IRefColumn } from "../../../voodoo-shared/ISchema";
@@ -15,10 +15,12 @@ import { sqlTypeToGraphQLType } from "../utils/sqlTypeToGraphQLType";
 import { useLocalStorage } from "react-use";
 import { getStringHash } from "../utils/getStringHash";
 import { deepMerge } from "../utils/deepMerge";
-import { getDatabaseApiPrefixRules } from "../validators/validators";
+import { getDatabaseApiPrefixRules, getDatabaseApiNameRules } from "../validators/validators";
 import { isFormValidatedOk } from "../utils/isFormValidatedOk";
+import { appState } from "../AppState";
 
 const { TabPane } = Tabs;
+const { Option } = Select;
 
 type NativeTableRecord = { schema_name: string, table_name: string };
 type INativeTableColumn = { name: string, type: string };
@@ -45,9 +47,10 @@ export function TableApiPage() {
         table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
         table_ref_tables(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
         native_table_columns(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
+        databases
     }`;
 
-    const query_result = useQuery<{ database: IDatabase, table: ITable, table_ref_tables: ITable[], native_table_columns: INativeTableColumn[] }>(query, { variables: { db_name, table_schema, table_name } });
+    const query_result = useQuery<{ database: IDatabase, table: ITable, table_ref_tables: ITable[], native_table_columns: INativeTableColumn[], databases: IDatabase[], }>(query, { variables: { db_name, table_schema, table_name } });
 
     let columnsByName: { [name: string]: IColumn } = {};
 
@@ -144,12 +147,10 @@ export function TableApiPage() {
             Modal.error({ title: t("first_correct_the_errors"), centered: true });
             return
         }
-
-        history.goBack();
     }
-    const cancelChanges = async () => {
-        history.goBack();
-    }
+    // const cancelChanges = async () => {
+    //     history.goBack();
+    // }
 
     // ********* ACTIONS *************
     let setColumn_on_off = async (native_column: INativeTableColumn, on_off_value: boolean) => {
@@ -244,6 +245,78 @@ export function TableApiPage() {
             }
         }
         return "error";
+    }
+
+    // edit object relationship column
+    const [object_relationship_form] = Form.useForm();
+    const [object_relationship_form_mode, set_object_relationship_form_mode] = useState<"none" | "add" | "edit">("none");
+    const [edited_obj_column, set_edited_obj_column] = useState<IColumn>();
+
+
+    const startAddObjectRelationship = () => {
+        // let db: IDatabase = {
+        //     name: "db1",
+        //     prefix: "sql1",
+        //     type: "SQL Server",
+        //     description: "",
+        //     version: 1,
+        //     connection: {
+        //         host: "localhost",
+        //         port: GET_DATABASE_DEFAULT_PORT("SQL Server"),
+        //         username: "sa",
+        //         password: "",
+        //         database: "",
+        //     }
+        // };
+        // setState({ ...state, dbEditorMode: "add", newDb: db });
+        // setTimeout(() => {
+        //     databaseEditForm.setFieldsValue(db);
+        // }, 1);
+    }
+
+    const startEditObjectRelationship = async (column: IColumn) => {
+        let table_to_update: ITable = await selectTable(db_name, table_schema, table_name);
+        let edited_column = table_to_update.columns.find((col => col.name === column.name));
+        set_object_relationship_form_mode("edit");
+        set_edited_obj_column(edited_column);
+        setTimeout(() => {
+            if (edited_column)
+                object_relationship_form.setFieldsValue(edited_column);
+        }, 1);
+
+    }
+
+    const saveObjectRelationship = async () => {
+        // if (await isFormValidatedOk(databaseEditForm)) {
+        //     let query = gql`
+        //         mutation ($db: JSON!) {
+        //             save_database(database: $db)
+        //         }
+        //     `;
+        //     await apolloExecute(query, { db: JSON.stringify(state.newDb) })
+        //     //await saveDatabase({ variables: { db: JSON.stringify(state.newDb) } });
+        //     await refetch();
+        //     setState({ ...state, dbEditorMode: "none" });
+        //     setDbState({});
+        //     //console.log("database saved !!!");
+        // }
+        // else {
+        //     Modal.error({ title: t("first_correct_the_errors"), centered: true });
+        // }
+
+    }
+
+    const deleteObjectRelationship = async (db_name: string) => {
+        // await deleteDatabase({ variables: { db_name: db_name } });
+        // await refetch();
+        // setDbState({});
+        // //console.log("database deleted !!!");
+    }
+
+    const cancelObjectRelationshipEditing = () => {
+        set_object_relationship_form_mode("none");
+        set_edited_obj_column(undefined);
+
     }
 
 
@@ -381,25 +454,6 @@ export function TableApiPage() {
                                 </div>}
                         >
 
-                            {/* <Column title={t("table_column")} dataIndex="table_name" key="table" className="table-text-color"
-                                render={(text: string, record: IColumn) => {
-                                    return (
-                                        <Highlighter
-                                            highlightClassName="highlight-text"
-                                            searchWords={[filterByName]}
-                                            autoEscape={true}
-                                            textToHighlight={record.name}
-                                        />
-                                    )
-                                }}
-                            />
-                            <Column title={t("sql_type")} dataIndex="table_name" key="table" className="table-text-color"
-                                render={(text: string, record: IColumn) => {
-                                    return (
-                                        <span>#{typeof record.ref_db}#</span>
-                                    )
-                                }}
-                            /> */}
                             <Column title={t("object_column_api_name")} key="object_column_api_name" className="api-name-text-color"
                                 render={(text: string, record: IColumn) => {
                                     return (
@@ -432,7 +486,7 @@ export function TableApiPage() {
                                     let style = record.disabled ? { color: "silver" } : {};
                                     return (
                                         <Fragment>
-                                            <span style={style}>{record.ref_table}</span>
+                                            <span style={style}>{record.ref_schema}.{record.ref_table}</span>
                                             <span style={style} className="api-name-text-color">
                                                 &nbsp;( {getRefTableApiName(record.ref_db, record.ref_schema, record.ref_table)} )
                                             </span>
@@ -452,9 +506,9 @@ export function TableApiPage() {
                                                     {record.ref_columns?.map((ref_col: IRefColumn) => {
                                                         return (
                                                             <tr style={{ border: "none", padding: 0 }}>
-                                                                <td style={{ border: "none", padding: 0 }}>{table_name}.{ref_col.column}</td>
+                                                                <td style={{ border: "none", padding: 0 }}>{table_schema}.{table_name}.{ref_col.column}</td>
                                                                 <td style={{ border: "none", padding: 0 }}>=></td>
-                                                                <td style={{ border: "none", padding: 0 }}>{record.ref_table}.{ref_col.ref_column}</td></tr>
+                                                                <td style={{ border: "none", padding: 0 }}>{record.ref_schema}.{record.ref_table}.{ref_col.ref_column}</td></tr>
                                                         )
                                                     })}
                                                 </tbody>
@@ -484,7 +538,7 @@ export function TableApiPage() {
                                                     className={`form-title-color-edit`}
                                                     onClick={() => {
                                                         //console.log("start-edit-database, record=", record);
-                                                        //startEditDatabaseAction(record);
+                                                        startEditObjectRelationship(record);
                                                     }}
                                                 >{t("edit")}
                                                 </Button>
@@ -553,6 +607,102 @@ export function TableApiPage() {
                         Content of Tab Pane 3
                     </TabPane>
                 </Tabs>
+                <Modal
+                    width={700}
+                    visible={object_relationship_form_mode !== "none"}
+                    title={<span className={`form-title-color-${object_relationship_form_mode}`}>{object_relationship_form_mode === "add" ? t("Adding_new_object_relationship") : t("Editing_object_relationship")}</span>}
+                    destroyOnClose
+                    footer={[
+                        <Button key="back" onClick={cancelObjectRelationshipEditing} disabled={appState.ui_disabled}>
+                            {t("Cancel")}
+                        </Button>,
+                        <Button key="submit" type="primary" onClick={saveObjectRelationship} disabled={appState.ui_disabled}>
+                            {t("Save")}
+                        </Button>,
+                    ]}
+                >
+                    <Form
+
+                        labelCol={{ span: 7 }}
+                        wrapperCol={{ span: 15 }}
+                        layout="horizontal"
+                        size="small"
+                        form={object_relationship_form}
+                        onValuesChange={(changedFields: any, allFields: any) => {
+                            // state.newDb = deepMerge(state.newDb, changedFields)
+                        }}
+                    >
+                        <Form.Item {...groupHeaderFormItemLayout}>
+                            <h3 className={`form-title-color-${object_relationship_form_mode}`}>{t("API_GRAPHQL_info")}</h3>
+                        </Form.Item>
+
+                        <Form.Item name="ref_db" label={t("ref_database")} >
+                            <Select style={{ width: 250 }}>
+                                {query_result.data.databases.map((db) => <Option value={db.name} key={db.name} >{db.name}</Option>)}
+                            </Select>
+                        </Form.Item>
+                        <Form.Item name="ref_schema" label={t("ref_schema")} >
+                            <Select style={{ width: 150 }}>
+                                {query_result.data.databases.map((db) => <Option value={db.name} key={db.name} >{db.name}</Option>)}
+                            </Select>
+                        </Form.Item>
+
+                        <Form.Item name="name" label={t("api_name")} rules={getDatabaseApiNameRules(object_relationship_form_mode === "add")}
+                        //    rules={getSchemaTableNameRules()}
+                        >
+                            <Input autoComplete="off" style={{ maxWidth: 400 }} disabled={object_relationship_form_mode === "edit"} className="api-name-text-color" />
+                        </Form.Item>
+
+                        <Form.Item name="prefix" label={t("api_prefix")} rules={getDatabaseApiPrefixRules()}>
+                            <Input autoComplete="off" style={{ maxWidth: 150 }} className="api-name-text-color" />
+                        </Form.Item>
+
+                        <Form.Item name="description" label={t("description")}
+                            rules={[{ max: 255, message: t("max_length_exceeded", { name: t("description"), length: 255 }) }]}
+
+                        >
+                            <Input autoComplete="off" style={{ maxWidth: 400 }} />
+                        </Form.Item>
+
+                        <Form.Item {...groupHeaderFormItemLayout}>
+                            <h3 className={`form-title-color-${object_relationship_form_mode}`}>{t("connection_options")}</h3>
+                        </Form.Item>
+
+
+                        <Form.Item
+                            name={["connection", "host"]}
+                            label={t("server_host")}
+                            rules={[
+                                {
+                                    required: true,
+                                    message: t("cannot_be_empty", { name: t("server_host") })
+                                },
+                                {
+                                    max: 255,
+                                    message: t("max_length_exceeded", { name: t("server_host"), length: 255 })
+                                },
+
+                            ]}
+                        >
+                            <Input autoComplete="off" style={{ maxWidth: 400 }} />
+                        </Form.Item>
+
+
+                        <Form.Item name={["connection", "username"]} label={t("login")}>
+                            <Input autoComplete="off" style={{ maxWidth: 250 }} />
+                        </Form.Item>
+
+                        <Form.Item name={["connection", "password"]} label={t("password")} >
+                            <Input.Password autoComplete="off" style={{ maxWidth: 250 }} />
+                        </Form.Item>
+
+                        <Form.Item name={["connection", "database"]} label={t("database")}>
+                            <Input autoComplete="off" style={{ maxWidth: 400 }} />
+                        </Form.Item>
+
+                    </Form>
+                </Modal>
+
             </div>
         );
     });
