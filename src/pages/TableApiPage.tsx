@@ -18,9 +18,10 @@ import { deepMerge } from "../utils/deepMerge";
 import { getDatabaseApiPrefixRules, getDatabaseApiNameRules } from "../validators/validators";
 import { isFormValidatedOk } from "../utils/isFormValidatedOk";
 import { appState } from "../AppState";
+import { TableObjectRelationshipModalForm } from "../components/TableObjectRelationshipModalForm";
+import { getTable } from "../schema/getTable";
 
 const { TabPane } = Tabs;
-const { Option } = Select;
 
 type NativeTableRecord = { schema_name: string, table_name: string };
 type INativeTableColumn = { name: string, type: string };
@@ -112,14 +113,14 @@ export function TableApiPage() {
 
     const [activeTabKey, setActiveTabKey] = useLocalStorage<string>(getStringHash(localStoragePrefix + "activeTabKey"), "Columns");
 
-    let selectTable = async (db_name?: String, table_schema?: String, table_name?: String): Promise<ITable> => {
-        let query = gql`
-                query ($db_name:String, $table_schema:String, $table_name:String) {
-                    table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
-            }`;
+    // let selectTable = async (db_name?: String, table_schema?: String, table_name?: String): Promise<ITable> => {
+    //     let query = gql`
+    //             query ($db_name:String, $table_schema:String, $table_name:String) {
+    //                 table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
+    //         }`;
 
-        return (await apolloExecute(query, { db_name, table_schema, table_name })).table;
-    }
+    //     return (await apolloExecute(query, { db_name, table_schema, table_name })).table;
+    // }
 
     let upsertTable = async (table: ITable) => {
         let query = gql`
@@ -132,7 +133,7 @@ export function TableApiPage() {
 
     const saveChanges = async () => {
         if (await isFormValidatedOk(table_form)) {
-            let table_to_update: ITable = await selectTable(db_name, table_schema, table_name);
+            let table_to_update: ITable = await getTable(db_name, table_schema, table_name);
             // let query = gql`
             //     query ($db_name:String, $table_schema:String, $table_name:String) {
             //         table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
@@ -156,7 +157,7 @@ export function TableApiPage() {
     let setColumn_on_off = async (native_column: INativeTableColumn, on_off_value: boolean) => {
 
         // reload table 
-        let table_to_update: ITable = await selectTable(db_name, table_schema, table_name);
+        let table_to_update: ITable = await getTable(db_name, table_schema, table_name);
 
         // let table_to_update: ITable;
         // let query = gql`
@@ -200,7 +201,7 @@ export function TableApiPage() {
     let set_object_relationship_on_off = async (column: IColumn, on_off_value: boolean) => {
 
         // reload table 
-        let table_to_update: ITable = await selectTable(db_name, table_schema, table_name);
+        let table_to_update: ITable = await getTable(db_name, table_schema, table_name);
         let table_column = table_to_update.columns.find((col => col.name === column.name));
         if (table_column) {
             table_column.disabled = !on_off_value;
@@ -248,9 +249,9 @@ export function TableApiPage() {
     }
 
     // edit object relationship column
-    const [object_relationship_form] = Form.useForm();
+    //const [object_relationship_form] = Form.useForm();
     const [object_relationship_form_mode, set_object_relationship_form_mode] = useState<"none" | "add" | "edit">("none");
-    const [edited_obj_column, set_edited_obj_column] = useState<IColumn>();
+    const [edited_obj_column_name, set_edited_obj_column_name] = useState<string>("");
 
 
     const startAddObjectRelationship = () => {
@@ -275,14 +276,14 @@ export function TableApiPage() {
     }
 
     const startEditObjectRelationship = async (column: IColumn) => {
-        let table_to_update: ITable = await selectTable(db_name, table_schema, table_name);
-        let edited_column = table_to_update.columns.find((col => col.name === column.name));
+        //let table_to_update: ITable = await selectTable(db_name, table_schema, table_name);
+        //let edited_column = table_to_update.columns.find((col => col.name === column.name));
         set_object_relationship_form_mode("edit");
-        set_edited_obj_column(edited_column);
-        setTimeout(() => {
-            if (edited_column)
-                object_relationship_form.setFieldsValue(edited_column);
-        }, 1);
+        set_edited_obj_column_name(column.name);
+        // setTimeout(() => {
+        //     if (edited_column)
+        //         object_relationship_form.setFieldsValue(edited_column);
+        // }, 1);
 
     }
 
@@ -313,11 +314,11 @@ export function TableApiPage() {
         // //console.log("database deleted !!!");
     }
 
-    const cancelObjectRelationshipEditing = () => {
-        set_object_relationship_form_mode("none");
-        set_edited_obj_column(undefined);
+    // const cancelObjectRelationshipEditing = () => {
+    //     set_object_relationship_form_mode("none");
+    //     set_edited_obj_column_name("");
 
-    }
+    // }
 
 
     return useObserver(() => {
@@ -607,7 +608,14 @@ export function TableApiPage() {
                         Content of Tab Pane 3
                     </TabPane>
                 </Tabs>
-                <Modal
+                <TableObjectRelationshipModalForm
+                    db_name={db_name || "?"}
+                    table_schema={table_schema || "?"}
+                    table_name={table_name || "?"}
+                    form_mode={object_relationship_form_mode}
+                    column_name={edited_obj_column_name}
+                />
+                {/* <Modal
                     width={700}
                     visible={object_relationship_form_mode !== "none"}
                     title={<span className={`form-title-color-${object_relationship_form_mode}`}>{object_relationship_form_mode === "add" ? t("Adding_new_object_relationship") : t("Editing_object_relationship")}</span>}
@@ -641,6 +649,7 @@ export function TableApiPage() {
                                 {query_result.data.databases.map((db) => <Option value={db.name} key={db.name} >{db.name}</Option>)}
                             </Select>
                         </Form.Item>
+
                         <Form.Item name="ref_schema" label={t("ref_schema")} >
                             <Select style={{ width: 150 }}>
                                 {query_result.data.databases.map((db) => <Option value={db.name} key={db.name} >{db.name}</Option>)}
@@ -701,7 +710,7 @@ export function TableApiPage() {
                         </Form.Item>
 
                     </Form>
-                </Modal>
+                </Modal> */}
 
             </div>
         );
