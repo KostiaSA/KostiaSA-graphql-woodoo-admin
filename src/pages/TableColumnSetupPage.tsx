@@ -2,7 +2,6 @@ import * as React from "react";
 import { Fragment, useState, useContext, ReactNode } from 'react';
 import { IDatabase, ITable, IColumn, IRefColumn, } from "../../../voodoo-shared/ISchema";
 import { gql, useQuery, useMutation, useLazyQuery } from "@apollo/client";
-import { ConsoleSqlOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -10,11 +9,7 @@ import {
     Input,
     Button,
     Select,
-    InputNumber,
-    Col,
-    Row,
     Table,
-    Popconfirm,
     Modal,
 } from "antd";
 
@@ -22,14 +17,12 @@ import Column from "antd/lib/table/Column";
 import _ from "lodash";
 import { deepMerge } from '../utils/deepMerge';
 import { getDatabaseApiPrefixRules, getDatabaseApiNameRules } from '../validators/validators';
-import { DATABASE_TYPES, GET_DATABASE_DEFAULT_PORT } from '../const';
-import { apolloClient } from "../apolloClient";
 import { apolloExecute } from "../apolloExecute";
-import { AppStateContext } from "../App";
 import { appState } from "../AppState";
 import { useObserver } from "mobx-react-lite";
 import { isFormValidatedOk } from "../utils/isFormValidatedOk";
 import { useHistory, useParams } from "react-router-dom";
+import { deepClone } from "../utils/deepClone";
 
 const { Option } = Select;
 
@@ -72,19 +65,25 @@ export function TableColumnSetupPage() {
             native_table_columns(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
         }`;
     }
-    //    const query_result = useQuery<{ database: IDatabase, column: IColumn }>(query, { fetchPolicy: "cache-first", variables: { db_name, table_schema, table_name, column_name } });
+
     type QueryResult = { database: IDatabase, databases: IDatabase[], native_table_columns: INativeTableColumn[], column: IColumn };
     const query_result = useQuery<QueryResult>(query, { variables: { db_name, table_schema, table_name, column_name } });
     let databases: IDatabase[] = [];
     if (query_result.data)
         databases = query_result.data.databases;
 
-    let column: IColumn = {} as any;
+    //let initColumn: IColumn = undefined as any;
+    //let column: IColumn = {} as any;
+    let [initColumn, setInitColumn] = useState<IColumn>(undefined as any);
+    let [column, setColumn] = useState<IColumn>({} as any);
+
     let columnType: "field" | "object_relationship" | "array_relationship" = "field";
+
+    console.log("=========  render-render =============", column, initColumn);
 
     if (addColumnType === "object_relationship") {
         columnType = "object_relationship";
-        column = {
+        setColumn({
             name: "new column name",
             alias: "new column name",
             description: "",
@@ -93,23 +92,33 @@ export function TableColumnSetupPage() {
             ref_schema: table_schema,
             ref_table: table_name,
             ref_columns: []
-        };
+        });
+        setInitColumn({
+            name: "new column name",
+            alias: "new column name",
+            description: "",
+            type: "ObjectValue",
+            ref_db: db_name,
+            ref_schema: table_schema,
+            ref_table: table_name,
+            ref_columns: []
+        });
     }
     else {
-        if (query_result.data) {
-            column = query_result.data.column;
-            if (column.ref_columns)
-                columnType = "object_relationship";
+        if (query_result.data && JSON.stringify(column) === "{}") {
+            setColumn(query_result.data.column);
+            setInitColumn(deepClone(query_result.data.column));
         }
+        if (column.ref_columns)
+            columnType = "object_relationship";
+    }
+
+    let isNeedToSave = (): boolean => {
+        return JSON.stringify(initColumn) !== JSON.stringify(column);
     }
 
     const history = useHistory();
-
-
-    // edit columns aliases
     const [column_form] = Form.useForm();
-    let [changedColumn, setChangedColumn] = useState<IColumn>({} as any);
-
 
     const groupHeaderFormItemLayout = {
         wrapperCol: {
@@ -143,10 +152,7 @@ export function TableColumnSetupPage() {
 
             table_to_update = (await apolloExecute(query, { db_name: db_name, table_schema, table_name })).table;
             let columnIndex = table_to_update.columns.findIndex((c) => c.name === column_name);
-            let column = table_to_update.columns[columnIndex];
-            //console.log("column-до", column)
-            table_to_update.columns[columnIndex] = deepMerge(column, changedColumn)
-            //console.log("column-после", column)
+            table_to_update.columns[columnIndex] = column;
 
             await upsertTable(table_to_update);
         }
@@ -160,10 +166,6 @@ export function TableColumnSetupPage() {
     const cancelChanges = async () => {
         history.goBack();
     }
-
-
-
-    //const [dbState, setDbState] = useState<{ [db_name: string]: string }>({});
 
     let ref_query = gql`
             query ($db_name: String, $table_schema:String, $table_name:String) {
@@ -181,11 +183,12 @@ export function TableColumnSetupPage() {
 
     let ref_query_variables = {
         variables: {
-            db_name: changedColumn.ref_db || column.ref_db,
-            table_schema: changedColumn.ref_schema || column.ref_schema,
-            table_name: changedColumn.ref_table || column.ref_table,
+            db_name: column.ref_db,
+            table_schema: column.ref_schema,
+            table_name: column.ref_table,
         }
     };
+
     let ref_query_result = useQuery<{ ref_tables: ITable[], ref_table_columns: INativeTableColumn[] }>(ref_query, ref_query_variables);
     let ref_tables: ITable[] = [];
     let ref_table_columns: INativeTableColumn[] = [];
@@ -225,7 +228,7 @@ export function TableColumnSetupPage() {
                     <Form.Item>
                         <Table
                             style={{ maxWidth: 800 }}
-                            dataSource={query_result.data?.column.ref_columns}
+                            dataSource={column.ref_columns}
                             rowKey="prefix"
                             size="small"
                             bordered
@@ -237,7 +240,10 @@ export function TableColumnSetupPage() {
                                         disabled={appState.ui_disabled}
                                         style={{ float: "right" }}
                                         size="small"
-                                        //onClick={startAddDatabaseAction}
+                                        onClick={() => {
+                                            column.ref_columns!.push({ column: "", ref_column: "" });
+                                            setColumn(deepClone(column));
+                                        }}
                                         className={`form-title-color-add`}
                                     >
                                         {"+ " + t("add_new_field")}
@@ -248,9 +254,6 @@ export function TableColumnSetupPage() {
                             <Column title={table_schema + "." + table_name} key="column"
                                 render={(text: string, refCol: IRefColumn, index: number) => {
                                     return (
-                                        // <span>
-                                        //     {refCol.column}
-                                        // </span>
                                         <Form.Item name={["ref_columns", index, "column"]} style={{ margin: 0 }}>
                                             <Select style={{ width: 300 }}>
                                                 {query_result.data?.native_table_columns.map((col) =>
@@ -267,9 +270,6 @@ export function TableColumnSetupPage() {
                             <Column title={column.ref_schema + "." + column.ref_table} key="ref_column"
                                 render={(text: string, refCol: IRefColumn, index: number) => {
                                     return (
-                                        // <span>
-                                        //     {refCol.ref_column}
-                                        // </span>
                                         <Form.Item name={["ref_columns", index, "ref_column"]} style={{ margin: 0 }}>
                                             <Select style={{ width: 300 }}>
                                                 {ref_table_columns.map((col) =>
@@ -281,12 +281,20 @@ export function TableColumnSetupPage() {
                                 }}
                             />
                             <Column title={<span style={{ float: "right" }}>{t("actions")}</span>} key="operation"
-                                render={(text, record: IColumn, index) => {
+                                render={(text, record: IColumn, index: number) => {
                                     if (!record.disabled)
                                         return (
                                             <Fragment>
-                                                <Button size="small" type="link" danger style={{ float: "right", cursor: "pointer" }}
+                                                <Button
+                                                    size="small"
+                                                    type="link" danger
+                                                    style={{ float: "right", cursor: "pointer" }}
                                                     className={`form-title-color-delete`}
+                                                    onClick={() => {
+                                                        column.ref_columns!.splice(index, 1);
+                                                        setColumn(deepClone(column));
+                                                    }}
+
                                                 >
                                                     {t("delete")}
                                                 </Button>
@@ -325,23 +333,18 @@ export function TableColumnSetupPage() {
                     layout="horizontal"
                     size="small"
                     form={column_form}
-                    initialValues={query_result.data?.column}
+                    initialValues={column}
                     onValuesChange={(_changedFields: any, allFields: any) => {
-                        setChangedColumn(deepMerge(changedColumn || {}, _changedFields));
+                        setColumn(deepMerge(JSON.parse(JSON.stringify(column)), _changedFields));
+                        //setChangedColumn(deepMerge(changedColumn || {}, _changedFields));
                         console.log("_changedFields", _changedFields);
-                        console.log("changedApiNamesFields", changedColumn);
+                        //console.log("changedApiNamesFields", changedColumn);
                     }}
                 >
                     <Form.Item {...groupHeaderFormItemLayout}>
                         <h3 className={`form-title-color`}>{t("API_GRAPHQL_info")}</h3>
                     </Form.Item>
 
-                    {/* <Form.Item name="name" label={t("api_name")} rules={getDatabaseApiNameRules(state.dbEditorMode === "add")}
-                    //    rules={getSchemaTableNameRules()}
-                    >
-                        <Input autoComplete="off" style={{ maxWidth: 400 }} disabled={state.dbEditorMode === "edit"} />
-                    </Form.Item>
- */}
                     <Form.Item name="alias" label={t("column_api_name")} rules={getDatabaseApiPrefixRules()}>
                         <Input autoComplete="off" style={{ maxWidth: 350 }} className="api-name-text-color" />
                     </Form.Item>
@@ -356,12 +359,11 @@ export function TableColumnSetupPage() {
                     {object_relation_group()}
 
 
-
                     <Form.Item wrapperCol={{ offset: 5, span: 16 }}>
                         <Button key="back" size="middle" onClick={cancelChanges} disabled={appState.ui_disabled}>
-                            {!changedColumn ? t("Close") : t("Cancel")}
+                            {!isNeedToSave() ? t("Close") : t("Cancel")}
                         </Button>
-                        <Button key="submit" size="middle" type="primary" style={{ marginLeft: 8 }} onClick={saveChanges} disabled={!changedColumn}>
+                        <Button key="submit" size="middle" type="primary" style={{ marginLeft: 8 }} onClick={saveChanges} disabled={!isNeedToSave()}>
                             {t("Save")}
                         </Button>
                     </Form.Item>

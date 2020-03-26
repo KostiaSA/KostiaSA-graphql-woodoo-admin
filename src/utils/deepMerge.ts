@@ -2,7 +2,6 @@ const deepmerge = require("deepmerge");
 
 export function deepMerge(o1: any, o2: any): any {
 
-    //const overwriteMerge = (destinationArray: any[], sourceArray: any[], options) => sourceArray
     const combineMerge = (target: any[], source: any[], options: any) => {
         const destination = target.slice()
 
