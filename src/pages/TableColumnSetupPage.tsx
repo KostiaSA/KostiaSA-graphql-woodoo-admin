@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Fragment, useState, useContext, } from "react";
+import { Fragment, useState, useContext, ReactNode } from 'react';
 import { IDatabase, ITable, IColumn, IRefColumn, } from "../../../voodoo-shared/ISchema";
 import { gql, useQuery, useMutation, useLazyQuery } from "@apollo/client";
 import { ConsoleSqlOutlined } from "@ant-design/icons";
@@ -43,14 +43,54 @@ export function TableColumnSetupPage() {
 
     let { db_name, table_schema, table_name, column_name } = useParams();
 
+    let addColumnType: "none" | "object_relationship" | "array_relationship" = "none";
+
+    if (column_name === "+new_object_relationship_column+") {
+        addColumnType = "object_relationship";
+    }
+
+    if (column_name === "+new_array_relationship_column+") {
+        addColumnType = "array_relationship";
+    }
+
+
     let query = gql`
         query ($db_name:String, $table_schema:String, $table_name:String, $column_name:String) {
             database(db_name:$db_name)
             column(db_name:$db_name, table_schema:$table_schema, table_name:$table_name, column_name:$column_name)
         }`;
 
+    if (addColumnType !== "none") {
+        query = gql`
+        query ($db_name:String) {
+            database(db_name:$db_name)
+        }`;
+    }
     //    const query_result = useQuery<{ database: IDatabase, column: IColumn }>(query, { fetchPolicy: "cache-first", variables: { db_name, table_schema, table_name, column_name } });
     const query_result = useQuery<{ database: IDatabase, column: IColumn }>(query, { variables: { db_name, table_schema, table_name, column_name } });
+    let column: IColumn;
+    let columnType: "field" | "object_relationship" | "array_relationship" = "field";
+
+    if (addColumnType === "object_relationship") {
+        columnType = "object_relationship";
+        column = {
+            name: "new column name",
+            alias: "new column name",
+            description: "",
+            type: "ObjectValue",
+            ref_db: db_name,
+            ref_schema: table_schema,
+            ref_table: table_name,
+            ref_columns: []
+        };
+    }
+    else {
+        if (query_result.data) {
+            column = query_result.data.column;
+            if (column.ref_columns)
+                columnType = "object_relationship";
+        }
+    }
 
     const history = useHistory();
 
@@ -114,6 +154,56 @@ export function TableColumnSetupPage() {
 
     //const [dbState, setDbState] = useState<{ [db_name: string]: string }>({});
 
+    let object_relation_group = (): ReactNode => {
+
+        if (columnType !== "object_relationship")
+            return null;
+        else
+            return (
+                <Fragment>
+                    <Form.Item {...groupHeaderFormItemLayout}>
+                        <h3 className={`form-title-color`}>{t("Referenced_object")}</h3>
+                    </Form.Item>
+
+                    <Form.Item>
+                        <Table
+                            dataSource={query_result.data?.column.ref_columns}
+                            rowKey="prefix"
+                            size="small"
+                            bordered
+                            pagination={false}
+                            title={() =>
+                                <div style={{ minHeight: 26 }}>
+                                    <h4 style={{ display: "inline" }}>{t("relationship_fields")}</h4>
+                                    <Button
+                                        disabled={appState.ui_disabled}
+                                        style={{ float: "right" }}
+                                        size="small"
+                                        //onClick={startAddDatabaseAction}
+                                        className={`form-title-color-add`}
+                                    >
+                                        {"+ " + t("add_new_field")}
+                                    </Button>
+                                </div>}
+                        >
+
+                            <Column title={t("table_column")} dataIndex="table_name" key="table" className="table-text-color"
+                                render={(text: string, refCol: IRefColumn) => {
+                                    return (
+                                        <span>
+                                            {refCol.ref_column}
+                                        </span>
+                                    )
+                                }}
+                            />
+                        </Table>
+
+                    </Form.Item>
+
+                </Fragment>
+            );
+    }
+
 
     return useObserver(() => {
 
@@ -125,7 +215,7 @@ export function TableColumnSetupPage() {
         return (
             <div style={{ maxWidth: 1200, margin: "20px 20px 0 20px" }}>
 
-                <h2>{t("Column_API")}: <span style={{ fontSize: 18, color: "gray" }}>{db_name}.{table_schema}.{table_name}.</span>{column_name}</h2>
+                <h2>{t("Column_API")}: <span style={{ fontSize: 18, color: "gray" }}>{db_name}.{table_schema}.{table_name}.</span><span className="api-name-text-color">{column_name}</span></h2>
                 <Form
 
                     labelCol={{ span: 5 }}
@@ -160,47 +250,9 @@ export function TableColumnSetupPage() {
                         <Input autoComplete="off" style={{ maxWidth: 500 }} />
                     </Form.Item>
 
-                    <Form.Item {...groupHeaderFormItemLayout}>
-                        <h3 className={`form-title-color`}>{t("Object_relationships")}</h3>
-                    </Form.Item>
+                    {object_relation_group()}
 
-                    <Form.Item>
-                        <Table
-                            dataSource={query_result.data?.column.ref_columns}
-                            rowKey="prefix"
-                            size="small"
-                            bordered
-                            pagination={{ pageSize: 75, position: "both" }}
-                            title={() =>
-                                <div style={{ minHeight: 26 }}>
-                                    <Button
-                                        disabled={appState.ui_disabled}
-                                        style={{ float: "right" }}
-                                        size="small"
-                                        //onClick={startAddDatabaseAction}
-                                        className={`form-title-color-add`}
-                                    >
-                                        {"+ " + t("add_new_relationship")}
-                                    </Button>
-                                </div>}
-                        >
 
-                            <Column title={t("table_column")} dataIndex="table_name" key="table" className="table-text-color"
-                                render={(text: string, refCol: IRefColumn) => {
-                                    return (
-                                        <span>
-                                            {refCol.ref_column}
-                                        </span>
-                                    )
-                                }}
-                            />
-                        </Table>
-
-                    </Form.Item>
-
-                    <Form.Item {...groupHeaderFormItemLayout}>
-                        <h3 className={`form-title-color`}>{t("Array_relationships")}</h3>
-                    </Form.Item>
 
                     <Form.Item wrapperCol={{ offset: 5, span: 16 }}>
                         <Button key="back" size="middle" onClick={cancelChanges} disabled={appState.ui_disabled}>

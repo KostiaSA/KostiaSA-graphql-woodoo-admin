@@ -414,7 +414,6 @@ export function TableApiPage() {
                                                 <Button size="small" type="link" style={{ float: "right" }}
                                                     // className={`form-title-color-add`}
                                                     onClick={() => {
-                                                        //history.push("/database-api/" + encodeURIComponent(record.name));
                                                         history.push("/table-column-api/" +
                                                             encodeURIComponent(db_name || "_") + "/" +
                                                             encodeURIComponent(table_schema || "_") + "/" +
@@ -447,7 +446,13 @@ export function TableApiPage() {
                                     <Button
                                         style={{ float: "right" }}
                                         size="small"
-                                        //onClick={startAddDatabaseAction}
+                                        onClick={() => {
+                                            history.push("/table-column-api/" +
+                                                encodeURIComponent(db_name || "_") + "/" +
+                                                encodeURIComponent(table_schema || "_") + "/" +
+                                                encodeURIComponent(table_name || "_") + "/" +
+                                                encodeURIComponent("+new_object_relationship_column+"));
+                                        }}
                                         className={`form-title-color-add`}
                                     >
                                         {"+ " + t("add_new_relationship")}
@@ -538,8 +543,11 @@ export function TableApiPage() {
                                                 <Button size="small" type="link" style={{ float: "right" }}
                                                     className={`form-title-color-edit`}
                                                     onClick={() => {
-                                                        //console.log("start-edit-database, record=", record);
-                                                        startEditObjectRelationship(record);
+                                                        history.push("/table-column-api/" +
+                                                            encodeURIComponent(db_name || "_") + "/" +
+                                                            encodeURIComponent(table_schema || "_") + "/" +
+                                                            encodeURIComponent(table_name || "_") + "/" +
+                                                            encodeURIComponent(record.name || "_"));
                                                     }}
                                                 >{t("edit")}
                                                 </Button>
@@ -608,13 +616,13 @@ export function TableApiPage() {
                         Content of Tab Pane 3
                     </TabPane>
                 </Tabs>
-                <TableObjectRelationshipModalForm
+                {/* <TableObjectRelationshipModalForm
                     db_name={db_name || "?"}
                     table_schema={table_schema || "?"}
                     table_name={table_name || "?"}
                     form_mode={object_relationship_form_mode}
                     column_name={edited_obj_column_name}
-                />
+                /> */}
                 {/* <Modal
                     width={700}
                     visible={object_relationship_form_mode !== "none"}

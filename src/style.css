@@ -5,3 +5,7 @@
 .api-name-text-color {
   color: #ff7a45;
 }
+
+.ant-table.ant-table-small thead>tr>th {
+  background-color: #ff94040f;
+}
