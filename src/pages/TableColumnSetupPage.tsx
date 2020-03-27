@@ -16,7 +16,7 @@ import {
 import Column from "antd/lib/table/Column";
 import _ from "lodash";
 import { deepMerge } from '../utils/deepMerge';
-import { getDatabaseApiPrefixRules, getDatabaseApiNameRules } from '../validators/validators';
+import { getGraphQlNameRules } from '../validators/validators';
 import { apolloExecute } from "../apolloExecute";
 import { appState } from "../AppState";
 import { useObserver } from "mobx-react-lite";
@@ -28,10 +28,10 @@ const { Option } = Select;
 
 type INativeTableColumn = { name: string, type: string };
 
-interface IState {
-    dbEditorMode: "none" | "add" | "edit",
-    newDb?: IDatabase,
-}
+// interface IState {
+//     dbEditorMode: "none" | "add" | "edit",
+//     newDb?: IDatabase,
+// }
 
 export function TableColumnSetupPage() {
     const { t, i18n } = useTranslation();
@@ -40,11 +40,11 @@ export function TableColumnSetupPage() {
 
     let addColumnType: "none" | "object_relationship" | "array_relationship" = "none";
 
-    if (column_name === "+new_object_relationship_column+") {
+    if (column_name === "new-object-relationship-column") {
         addColumnType = "object_relationship";
     }
 
-    if (column_name === "+new_array_relationship_column+") {
+    if (column_name === "new-array-relationship-column") {
         addColumnType = "array_relationship";
     }
 
@@ -59,7 +59,7 @@ export function TableColumnSetupPage() {
 
     if (addColumnType !== "none") {
         query = gql`
-        query ($db_name:String) {
+        query ($db_name:String, $table_schema:String, $table_name:String) {
             databases
             database(db_name:$db_name)
             native_table_columns(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
@@ -83,34 +83,38 @@ export function TableColumnSetupPage() {
 
     if (addColumnType === "object_relationship") {
         columnType = "object_relationship";
-        setColumn({
-            name: "new column name",
-            alias: "new column name",
-            description: "",
-            type: "ObjectValue",
-            ref_db: db_name,
-            ref_schema: table_schema,
-            ref_table: table_name,
-            ref_columns: []
-        });
-        setInitColumn({
-            name: "new column name",
-            alias: "new column name",
-            description: "",
-            type: "ObjectValue",
-            ref_db: db_name,
-            ref_schema: table_schema,
-            ref_table: table_name,
-            ref_columns: []
-        });
+        if (JSON.stringify(column) === "{}") {
+            setColumn({
+                name: "new_column_name",
+                alias: "new_column_name",
+                description: "",
+                type: "ObjectValue",
+                ref_db: db_name,
+                ref_schema: table_schema,
+                ref_table: table_name,
+                ref_columns: []
+            });
+            setInitColumn({
+                name: "new_column_name",
+                alias: "new_column_name",
+                description: "",
+                type: "ObjectValue",
+                ref_db: db_name,
+                ref_schema: table_schema,
+                ref_table: table_name,
+                ref_columns: []
+            });
+        }
     }
     else {
-        if (query_result.data && JSON.stringify(column) === "{}") {
-            setColumn(query_result.data.column);
-            setInitColumn(deepClone(query_result.data.column));
+        if (query_result.data) {
+            if (JSON.stringify(column) === "{}") {
+                setColumn(query_result.data.column);
+                setInitColumn(deepClone(query_result.data.column));
+            }
+            if (query_result.data.column.ref_columns)
+                columnType = "object_relationship";
         }
-        if (column.ref_columns)
-            columnType = "object_relationship";
     }
 
     let isNeedToSave = (): boolean => {
@@ -192,9 +196,14 @@ export function TableColumnSetupPage() {
     let ref_query_result = useQuery<{ ref_tables: ITable[], ref_table_columns: INativeTableColumn[] }>(ref_query, ref_query_variables);
     let ref_tables: ITable[] = [];
     let ref_table_columns: INativeTableColumn[] = [];
+    let ref_schemas: string[] = [];
     if (ref_query_result.data) {
         ref_tables = ref_query_result.data.ref_tables;
         ref_table_columns = ref_query_result.data.ref_table_columns;
+        for (let table of ref_tables) {
+            if (ref_schemas.indexOf(table.dbo) === -1)
+                ref_schemas.push(table.dbo);
+        }
     }
 
     let object_relation_group = (): ReactNode => {
@@ -205,6 +214,7 @@ export function TableColumnSetupPage() {
         else
             return (
                 <Fragment>
+
                     <Form.Item {...groupHeaderFormItemLayout}>
                         <h3 className={`form-title-color`}>{t("Referenced_object")}</h3>
                     </Form.Item>
@@ -216,7 +226,7 @@ export function TableColumnSetupPage() {
                     </Form.Item>
                     <Form.Item name="ref_schema" label={t("ref_schema")} >
                         <Select style={{ width: 150 }}>
-                            {databases.map((db) => <Option value={db.name} key={db.name} >{db.name}</Option>)}
+                            {ref_schemas.map((dbo) => <Option value={dbo} key={dbo} >{dbo}</Option>)}
                         </Select>
                     </Form.Item>
                     <Form.Item name="ref_table" label={t("ref_table")} >
@@ -229,7 +239,7 @@ export function TableColumnSetupPage() {
                         <Table
                             style={{ maxWidth: 800 }}
                             dataSource={column.ref_columns}
-                            rowKey="prefix"
+                            //rowKey="column"
                             size="small"
                             bordered
                             pagination={false}
@@ -293,10 +303,11 @@ export function TableColumnSetupPage() {
                                                     onClick={() => {
                                                         column.ref_columns!.splice(index, 1);
                                                         setColumn(deepClone(column));
+                                                        column_form.resetFields();
                                                     }}
 
                                                 >
-                                                    {t("delete")}
+                                                    {t("delete")}{index}
                                                 </Button>
                                             </Fragment>
                                         )
@@ -322,10 +333,21 @@ export function TableColumnSetupPage() {
 
         //console.log(query_result.data);
 
+        let top_title: ReactNode;
+        if (addColumnType == "object_relationship")
+            top_title = <h2 className={`form-title-color-add`} style={{ textAlign: "center" }}>{t("Adding_new_object_relationship_column")}</h2>;
+
+
         return (
             <div style={{ maxWidth: 1200, margin: "20px 20px 0 20px" }}>
 
-                <h2>{t("Column_API")}: <span style={{ fontSize: 18, color: "gray" }}>{db_name}.{table_schema}.{table_name}.</span><span className="api-name-text-color">{column_name}</span></h2>
+                {top_title}
+
+                <h2>
+                    {t("Column_API")}:
+                    <span style={{ fontSize: 18, color: "gray" }}>{db_name}.{table_schema}.{table_name}.</span>
+                    <span className="api-name-text-color">{column.alias}</span>
+                </h2>
                 <Form
 
                     labelCol={{ span: 5 }}
@@ -345,7 +367,7 @@ export function TableColumnSetupPage() {
                         <h3 className={`form-title-color`}>{t("API_GRAPHQL_info")}</h3>
                     </Form.Item>
 
-                    <Form.Item name="alias" label={t("column_api_name")} rules={getDatabaseApiPrefixRules()}>
+                    <Form.Item name="alias" label={t("column_api_name")} rules={getGraphQlNameRules()}>
                         <Input autoComplete="off" style={{ maxWidth: 350 }} className="api-name-text-color" />
                     </Form.Item>
 

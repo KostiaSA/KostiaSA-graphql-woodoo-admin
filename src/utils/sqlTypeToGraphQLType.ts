@@ -19,6 +19,7 @@ export function sqlTypeToGraphQLType(sql_type: string): string {
         case "timestamp": return "String";
         case "money": return "Float";
         case "uniqueidentifier": return "String";
+        case "binary": return "String";
         default: throw new Error("sqlTypeToGraphQLType(): unknown sql_type " + sql_type);
     }
 

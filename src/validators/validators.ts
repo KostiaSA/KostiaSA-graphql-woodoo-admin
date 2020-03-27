@@ -73,3 +73,22 @@ export function getDatabaseApiPrefixRules(): Rule[] {
     ]
 }
 
+export function getGraphQlNameRules(label: string = ""): Rule[] {
+    return [
+        {
+            required: true,
+            message: t("cannot_be_empty", { name: label })
+        },
+        {
+            max: 63,
+            message: t("max_length_exceeded", { name: label, length: 63 })
+        },
+        {
+            validator: async (rule: Rule, value: string) => {
+                if (!GraphQL_indentifier_regexp.test(value))
+                    throw new Error(t("bad_identifier", { name: label }));
+            },
+        },
+
+    ]
+}

@@ -15,7 +15,7 @@ import { sqlTypeToGraphQLType } from "../utils/sqlTypeToGraphQLType";
 import { useLocalStorage } from "react-use";
 import { getStringHash } from "../utils/getStringHash";
 import { deepMerge } from "../utils/deepMerge";
-import { getDatabaseApiPrefixRules, getDatabaseApiNameRules } from "../validators/validators";
+import { getGraphQlNameRules } from '../validators/validators';
 import { isFormValidatedOk } from "../utils/isFormValidatedOk";
 import { appState } from "../AppState";
 import { TableObjectRelationshipModalForm } from "../components/TableObjectRelationshipModalForm";
@@ -141,8 +141,8 @@ export function TableApiPage() {
 
             // table_to_update = (await apolloExecute(query, { db_name: db_name, table_schema, table_name })).table;
             table_to_update = deepMerge(table_to_update, changedFields)
-
             await upsertTable(table_to_update);
+            setChangedFields(null as any);
         }
         else {
             Modal.error({ title: t("first_correct_the_errors"), centered: true });
@@ -333,6 +333,56 @@ export function TableApiPage() {
                     &nbsp;<span className="api-name-text-color">{query_result.data?.table.array_alias}</span>
                 </h2>
                 <Tabs activeKey={activeTabKey} animated={false} onChange={(key) => setActiveTabKey(key)}>
+                    <TabPane tab={t("API_names")} key="API_names" forceRender>
+                        <Form
+
+                            labelCol={{ span: 5 }}
+                            wrapperCol={{ span: 15 }}
+                            layout="horizontal"
+                            size="small"
+                            form={table_form}
+                            initialValues={query_result.data?.table}
+                            onValuesChange={(_changedFields: any, allFields: any) => {
+                                setChangedFields(deepMerge(changedFields || {}, _changedFields));
+                                //console.log("changedFields", changedFields);
+                            }}
+                        >
+                            <Form.Item {...groupHeaderFormItemLayout}>
+                                <h3 className={`form-title-color`}>{t("API_GRAPHQL_info")}</h3>
+                            </Form.Item>
+
+                            {/* <Form.Item name="name" label={t("api_name")} rules={getDatabaseApiNameRules(state.dbEditorMode === "add")}
+                    //    rules={getSchemaTableNameRules()}
+                    >
+                        <Input autoComplete="off" style={{ maxWidth: 400 }} disabled={state.dbEditorMode === "edit"} />
+                    </Form.Item>
+ */}
+                            <Form.Item name="object_alias" label={t("single_object_api_name")} rules={getGraphQlNameRules()}>
+                                <Input autoComplete="off" style={{ maxWidth: 350 }} className="api-name-text-color" />
+                            </Form.Item>
+
+                            <Form.Item name="array_alias" label={t("objects_array_api_name")} rules={getGraphQlNameRules()}>
+                                <Input autoComplete="off" style={{ maxWidth: 350 }} className="api-name-text-color" />
+                            </Form.Item>
+
+                            <Form.Item name="description" label={t("description")}
+                                rules={[{ max: 255, message: t("max_length_exceeded", { name: t("description"), length: 255 }) }]}
+
+                            >
+                                <Input autoComplete="off" style={{ maxWidth: 500 }} />
+                            </Form.Item>
+
+
+                            <Form.Item wrapperCol={{ offset: 5, span: 16 }}>
+                                <Button
+                                    key="submit" size="middle" type="primary" style={{ marginTop: 10 }}
+                                    onClick={saveChanges} disabled={!changedFields}>
+                                    {t("Save")}
+                                </Button>
+                            </Form.Item>
+                        </Form>
+                    </TabPane>
+
                     <TabPane tab={t("Columns") + getColumnsCountStr()} key="Columns" forceRender>
                         <Form layout="inline">
                             <Form.Item label={t("search_by_name")}>
@@ -451,7 +501,7 @@ export function TableApiPage() {
                                                 encodeURIComponent(db_name || "_") + "/" +
                                                 encodeURIComponent(table_schema || "_") + "/" +
                                                 encodeURIComponent(table_name || "_") + "/" +
-                                                encodeURIComponent("+new_object_relationship_column+"));
+                                                encodeURIComponent("new-object-relationship-column"));
                                         }}
                                         className={`form-title-color-add`}
                                     >
@@ -512,9 +562,14 @@ export function TableApiPage() {
                                                     {record.ref_columns?.map((ref_col: IRefColumn) => {
                                                         return (
                                                             <tr style={{ border: "none", padding: 0 }}>
-                                                                <td style={{ border: "none", padding: 0 }}>{table_schema}.{table_name}.{ref_col.column}</td>
+                                                                <td style={{ border: "none", padding: 0 }}>
+                                                                    <span style={{ color: "rgba(128, 128, 128, 0.81)" }}>{table_schema}.{table_name}.</span>{ref_col.column}
+                                                                </td>
                                                                 <td style={{ border: "none", padding: 0 }}>=></td>
-                                                                <td style={{ border: "none", padding: 0 }}>{record.ref_schema}.{record.ref_table}.{ref_col.ref_column}</td></tr>
+                                                                <td style={{ border: "none", padding: 0 }}>
+                                                                    <span style={{ color: "rgba(128, 128, 128, 0.81)" }}>{record.ref_schema}.{record.ref_table}.</span>{ref_col.ref_column}
+                                                                </td>
+                                                            </tr>
                                                         )
                                                     })}
                                                 </tbody>
@@ -562,164 +617,14 @@ export function TableApiPage() {
                         </Table>
                     </TabPane>
 
-                    <TabPane tab={t("API_names")} key="API_names" forceRender>
-                        <Form
-
-                            labelCol={{ span: 5 }}
-                            wrapperCol={{ span: 15 }}
-                            layout="horizontal"
-                            size="small"
-                            form={table_form}
-                            initialValues={query_result.data?.table}
-                            onValuesChange={(_changedFields: any, allFields: any) => {
-                                setChangedFields(deepMerge(changedFields || {}, _changedFields));
-                                //console.log("changedFields", changedFields);
-                            }}
-                        >
-                            <Form.Item {...groupHeaderFormItemLayout}>
-                                <h3 className={`form-title-color`}>{t("API_GRAPHQL_info")}</h3>
-                            </Form.Item>
-
-                            {/* <Form.Item name="name" label={t("api_name")} rules={getDatabaseApiNameRules(state.dbEditorMode === "add")}
-                    //    rules={getSchemaTableNameRules()}
-                    >
-                        <Input autoComplete="off" style={{ maxWidth: 400 }} disabled={state.dbEditorMode === "edit"} />
-                    </Form.Item>
- */}
-                            <Form.Item name="object_alias" label={t("single_object_api_name")} rules={getDatabaseApiPrefixRules()}>
-                                <Input autoComplete="off" style={{ maxWidth: 350 }} className="api-name-text-color" />
-                            </Form.Item>
-
-                            <Form.Item name="array_alias" label={t("objects_array_api_name")} rules={getDatabaseApiPrefixRules()}>
-                                <Input autoComplete="off" style={{ maxWidth: 350 }} className="api-name-text-color" />
-                            </Form.Item>
-
-                            <Form.Item name="description" label={t("description")}
-                                rules={[{ max: 255, message: t("max_length_exceeded", { name: t("description"), length: 255 }) }]}
-
-                            >
-                                <Input autoComplete="off" style={{ maxWidth: 500 }} />
-                            </Form.Item>
-
-
-                            <Form.Item wrapperCol={{ offset: 5, span: 16 }}>
-                                <Button key="submit" size="middle" type="primary" style={{ marginLeft: 8 }} onClick={saveChanges} disabled={!changedFields}>
-                                    {t("Save")}
-                                </Button>
-                            </Form.Item>
-                        </Form>
-                    </TabPane>
                     <TabPane tab={t("Procedures")} key="procedures">
                         Content of Tab Pane 3
                     </TabPane>
+
                     <TabPane tab={t("Functions")} key="functions">
                         Content of Tab Pane 3
                     </TabPane>
                 </Tabs>
-                {/* <TableObjectRelationshipModalForm
-                    db_name={db_name || "?"}
-                    table_schema={table_schema || "?"}
-                    table_name={table_name || "?"}
-                    form_mode={object_relationship_form_mode}
-                    column_name={edited_obj_column_name}
-                /> */}
-                {/* <Modal
-                    width={700}
-                    visible={object_relationship_form_mode !== "none"}
-                    title={<span className={`form-title-color-${object_relationship_form_mode}`}>{object_relationship_form_mode === "add" ? t("Adding_new_object_relationship") : t("Editing_object_relationship")}</span>}
-                    destroyOnClose
-                    footer={[
-                        <Button key="back" onClick={cancelObjectRelationshipEditing} disabled={appState.ui_disabled}>
-                            {t("Cancel")}
-                        </Button>,
-                        <Button key="submit" type="primary" onClick={saveObjectRelationship} disabled={appState.ui_disabled}>
-                            {t("Save")}
-                        </Button>,
-                    ]}
-                >
-                    <Form
-
-                        labelCol={{ span: 7 }}
-                        wrapperCol={{ span: 15 }}
-                        layout="horizontal"
-                        size="small"
-                        form={object_relationship_form}
-                        onValuesChange={(changedFields: any, allFields: any) => {
-                            // state.newDb = deepMerge(state.newDb, changedFields)
-                        }}
-                    >
-                        <Form.Item {...groupHeaderFormItemLayout}>
-                            <h3 className={`form-title-color-${object_relationship_form_mode}`}>{t("API_GRAPHQL_info")}</h3>
-                        </Form.Item>
-
-                        <Form.Item name="ref_db" label={t("ref_database")} >
-                            <Select style={{ width: 250 }}>
-                                {query_result.data.databases.map((db) => <Option value={db.name} key={db.name} >{db.name}</Option>)}
-                            </Select>
-                        </Form.Item>
-
-                        <Form.Item name="ref_schema" label={t("ref_schema")} >
-                            <Select style={{ width: 150 }}>
-                                {query_result.data.databases.map((db) => <Option value={db.name} key={db.name} >{db.name}</Option>)}
-                            </Select>
-                        </Form.Item>
-
-                        <Form.Item name="name" label={t("api_name")} rules={getDatabaseApiNameRules(object_relationship_form_mode === "add")}
-                        //    rules={getSchemaTableNameRules()}
-                        >
-                            <Input autoComplete="off" style={{ maxWidth: 400 }} disabled={object_relationship_form_mode === "edit"} className="api-name-text-color" />
-                        </Form.Item>
-
-                        <Form.Item name="prefix" label={t("api_prefix")} rules={getDatabaseApiPrefixRules()}>
-                            <Input autoComplete="off" style={{ maxWidth: 150 }} className="api-name-text-color" />
-                        </Form.Item>
-
-                        <Form.Item name="description" label={t("description")}
-                            rules={[{ max: 255, message: t("max_length_exceeded", { name: t("description"), length: 255 }) }]}
-
-                        >
-                            <Input autoComplete="off" style={{ maxWidth: 400 }} />
-                        </Form.Item>
-
-                        <Form.Item {...groupHeaderFormItemLayout}>
-                            <h3 className={`form-title-color-${object_relationship_form_mode}`}>{t("connection_options")}</h3>
-                        </Form.Item>
-
-
-                        <Form.Item
-                            name={["connection", "host"]}
-                            label={t("server_host")}
-                            rules={[
-                                {
-                                    required: true,
-                                    message: t("cannot_be_empty", { name: t("server_host") })
-                                },
-                                {
-                                    max: 255,
-                                    message: t("max_length_exceeded", { name: t("server_host"), length: 255 })
-                                },
-
-                            ]}
-                        >
-                            <Input autoComplete="off" style={{ maxWidth: 400 }} />
-                        </Form.Item>
-
-
-                        <Form.Item name={["connection", "username"]} label={t("login")}>
-                            <Input autoComplete="off" style={{ maxWidth: 250 }} />
-                        </Form.Item>
-
-                        <Form.Item name={["connection", "password"]} label={t("password")} >
-                            <Input.Password autoComplete="off" style={{ maxWidth: 250 }} />
-                        </Form.Item>
-
-                        <Form.Item name={["connection", "database"]} label={t("database")}>
-                            <Input autoComplete="off" style={{ maxWidth: 400 }} />
-                        </Form.Item>
-
-                    </Form>
-                </Modal> */}
-
             </div>
         );
     });

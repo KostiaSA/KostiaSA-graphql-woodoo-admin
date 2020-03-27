@@ -110,6 +110,7 @@ const resources = {
             "checking...": "проверка...",
             "connection Ok": "подключение Ok",
             "Description": "Описание",
+            "first_correct_the_errors": "исправьте ошибки",
 
             // validation rules
             "bad_identifier": "{{name}} может содержать только латин. буквы, цифры, _ и начинаться с буквы или _",

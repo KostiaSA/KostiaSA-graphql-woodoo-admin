@@ -315,10 +315,10 @@ export function DatabasesListPage() {
                             <h3 className={`form-title-color-${state.dbEditorMode}`}>{t("API_GRAPHQL_info")}</h3>
                         </Form.Item>
 
-                        <Form.Item name="name" label={t("api_name")} rules={getDatabaseApiNameRules(state.dbEditorMode === "add")}
+                        <Form.Item name="name" label={t("db_name")} rules={getDatabaseApiNameRules(state.dbEditorMode === "add")}
                         //    rules={getSchemaTableNameRules()}
                         >
-                            <Input autoComplete="off" style={{ maxWidth: 400 }} disabled={state.dbEditorMode === "edit"} className="api-name-text-color" />
+                            <Input autoComplete="off" style={{ maxWidth: 400 }} disabled={state.dbEditorMode === "edit"} />
                         </Form.Item>
 
                         <Form.Item name="prefix" label={t("api_prefix")} rules={getDatabaseApiPrefixRules()}>
