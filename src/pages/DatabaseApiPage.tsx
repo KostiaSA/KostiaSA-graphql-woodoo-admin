@@ -188,7 +188,7 @@ export function DatabaseApiPage() {
 
         let db_alias = query_result.data?.database.name;
         if (query_result.data?.database.prefix)
-            db_alias = db_alias + " (" + query_result.data?.database.prefix + ")";
+            db_alias = db_alias + " (" + query_result.data?.database.prefix + "_)";
 
         return (
             <div style={{ maxWidth: 1200, margin: "20px 20px 0 20px" }}>

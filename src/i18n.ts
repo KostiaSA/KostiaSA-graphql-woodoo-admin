@@ -150,7 +150,7 @@ const resources = {
 
 
             // TableColumnApiPage
-            "Column_API": "Колонка",
+            "Column": "Колонка",
         }
     },
 
@@ -223,7 +223,7 @@ const resources = {
             "objects_array_api_name": "objects array api name",
 
             // TableColumnApiPage
-            "Column_API": "Table column API",
+            "Column": "Column",
         }
     }
 };

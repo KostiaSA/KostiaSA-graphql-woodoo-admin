@@ -55,13 +55,13 @@ export function getDatabaseApiNameRules(addMode: boolean): Rule[] {
 
 export function getDatabaseApiPrefixRules(): Rule[] {
     return [
-        {
-            required: true,
-            message: t("cannot_be_empty", { name: t("api_prefix") })
-        },
+        // {
+        //     required: true,
+        //     message: t("cannot_be_empty", { name: t("api_prefix") })
+        // },
         {
             validator: async (rule: Rule, value: string) => {
-                if (!GraphQL_indentifier_regexp.test(value))
+                if (typeof value === "string" && value.length > 0 && !GraphQL_indentifier_regexp.test(value))
                     throw new Error(t("bad_identifier", { name: t("api_prefix") }));
             },
         },

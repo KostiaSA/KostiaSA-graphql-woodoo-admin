@@ -23,6 +23,7 @@ import { useObserver } from "mobx-react-lite";
 import { isFormValidatedOk } from "../utils/isFormValidatedOk";
 import { useHistory, useParams } from "react-router-dom";
 import { deepClone } from "../utils/deepClone";
+import { getTableObjectApiName } from "../utils/getTableObjectApiName";
 
 const { Option } = Select;
 
@@ -53,6 +54,7 @@ export function TableColumnSetupPage() {
         query ($db_name:String, $table_schema:String, $table_name:String, $column_name:String) {
             databases
             database(db_name:$db_name)
+            table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
             native_table_columns(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
             column(db_name:$db_name, table_schema:$table_schema, table_name:$table_name, column_name:$column_name)
         }`;
@@ -62,15 +64,24 @@ export function TableColumnSetupPage() {
         query ($db_name:String, $table_schema:String, $table_name:String) {
             databases
             database(db_name:$db_name)
+            table(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
             native_table_columns(db_name:$db_name, table_schema:$table_schema, table_name:$table_name)
         }`;
     }
 
-    type QueryResult = { database: IDatabase, databases: IDatabase[], native_table_columns: INativeTableColumn[], column: IColumn };
+    type QueryResult = { database: IDatabase, databases: IDatabase[], table: ITable, native_table_columns: INativeTableColumn[], column: IColumn };
     const query_result = useQuery<QueryResult>(query, { variables: { db_name, table_schema, table_name, column_name } });
+
     let databases: IDatabase[] = [];
-    if (query_result.data)
+    let database: IDatabase;
+    let table: ITable;
+    if (query_result.data) {
         databases = query_result.data.databases;
+        database = query_result.data.database;
+        table = query_result.data.table;
+    }
+
+
 
     //let initColumn: IColumn = undefined as any;
     //let column: IColumn = {} as any;
@@ -214,7 +225,7 @@ export function TableColumnSetupPage() {
         else
             return (
                 <Fragment>
-
+                    <br></br>
                     <Form.Item {...groupHeaderFormItemLayout}>
                         <h3 className={`form-title-color`}>{t("Referenced_object")}</h3>
                     </Form.Item>
@@ -335,7 +346,7 @@ export function TableColumnSetupPage() {
 
         let top_title: ReactNode;
         if (addColumnType == "object_relationship")
-            top_title = <h2 className={`form-title-color-add`} style={{ textAlign: "center" }}>{t("Adding_new_object_relationship_column")}</h2>;
+            top_title = <h2 className={`form-title-color-add`} style={{ textAlign: "left" }}>{t("Adding_new_object_relationship_column")}</h2>;
 
 
         return (
@@ -344,10 +355,33 @@ export function TableColumnSetupPage() {
                 {top_title}
 
                 <h2>
-                    {t("Column_API")}:
-                    <span style={{ fontSize: 18, color: "gray" }}>{db_name}.{table_schema}.{table_name}.</span>
+                    <table style={{ margin: 0 }}>
+                        <tbody>
+                            <tr>
+                                <td style={{ margin: 0, textAlign: "right" }}>{t("Column")}: </td>
+                                <td style={{ margin: 0 }}>
+                                    <span style={{ marginLeft: 10, fontSize: 18, color: "gray" }}> {db_name}.{table_schema}.{table_name}.</span>
+                                    <span className="api-name-text-color">{column.alias}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style={{ margin: 0, textAlign: "right" }}>{t("API name")}: </td>
+                                <td style={{ margin: 0 }} >
+                                    <span style={{ marginLeft: 10, fontSize: 18, color: "#ff7a45b3" }}> {getTableObjectApiName(database, table)}.</span>
+                                    <span className="api-name-text-color">{column.alias}</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    {/* {t("Column")}:
+                    <span style={{ fontSize: 18, color: "gray" }}> {db_name}.{table_schema}.{table_name}.</span>
                     <span className="api-name-text-color">{column.alias}</span>
+                    <br />
+                    {t("API name")}:
+                    <span style={{ fontSize: 18, color: "gray" }}> {db_name}.{table_schema}.{table_name}.</span>
+                    <span className="api-name-text-color">{column.alias}</span> */}
                 </h2>
+                <br></br>
                 <Form
 
                     labelCol={{ span: 5 }}
@@ -380,7 +414,7 @@ export function TableColumnSetupPage() {
 
                     {object_relation_group()}
 
-
+                    <br />
                     <Form.Item wrapperCol={{ offset: 5, span: 16 }}>
                         <Button key="back" size="middle" onClick={cancelChanges} disabled={appState.ui_disabled}>
                             {!isNeedToSave() ? t("Close") : t("Cancel")}
@@ -391,7 +425,7 @@ export function TableColumnSetupPage() {
                     </Form.Item>
                 </Form>
 
-            </div>
+            </div >
 
         )
     });
