@@ -128,12 +128,27 @@ export function DatabaseApiPage() {
                 }`;
                 let native_columns = (await apolloExecute(query, { db_name: db_name, table_schema: native_table.schema_name, table_name: native_table.table_name })).native_table_columns;
 
+                let translate_query = gql`
+                    query ($non_en_words:JSON) {
+                        translate(non_en_words: $non_en_words )
+                    }
+                `;
+
+                let { translate } = await apolloExecute(translate_query, { non_en_words: JSON.stringify(native_columns.map((native_col: any) => native_col.name)) });
+
+
+                let alias_used: { [alias: string]: boolean } = {};
+
                 table = {
                     dbname: db_name || "",
                     columns: native_columns.map((native_col: any) => {
+                        let alias = translate[native_col.name];
+                        while (alias_used[alias])
+                            alias += "_";
+                        alias_used[alias] = true;
                         return {
                             name: native_col.name,
-                            alias: translitToGraphQL(native_col.name),
+                            alias: alias,
                             type: sqlTypeToGraphQLType(native_col.type),
                             sql_type: native_col.type,
                             description: native_col.name,
