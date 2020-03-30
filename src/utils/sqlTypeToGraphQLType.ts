@@ -4,6 +4,7 @@ export function sqlTypeToGraphQLType(sql_type: string): string {
 
     switch (sql_type.toLowerCase()) {
         case "bit": return "Boolean";
+        case "bigint": return "Int";
         case "int": return "Int";
         case "smallint": return "Int";
         case "tinyint": return "Int";

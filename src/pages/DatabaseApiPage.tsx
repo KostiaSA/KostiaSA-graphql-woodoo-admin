@@ -15,6 +15,7 @@ import { sqlTypeToGraphQLType } from "../utils/sqlTypeToGraphQLType";
 import { useLocalStorage } from 'react-use';
 import { getStringHash } from '../utils/getStringHash';
 import { GET_DATABASE_DEFAULT_PORT } from "../const";
+import { replaceAll } from '../utils/replaceAll';
 
 const { TabPane } = Tabs;
 
